@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import LeaguePage from "./pages/LeaguePage";
 import CupPage from "./pages/CupPage";
 import MatchesPage from "./pages/MatchesPage";
+import BetsPage from "./pages/BetsPage";
 import RulesPage from "./pages/RulesPage";
 import AdminMatchesPage from "./pages/AdminMatchesPage";
 import AdminParticipantsPage from "./pages/AdminParticipantsPage";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/liga" element={<LeaguePage />} />
               <Route path="/copa" element={<CupPage />} />
               <Route path="/jogos" element={<MatchesPage />} />
+              <Route path="/palpites" element={<BetsPage />} />
               <Route path="/regras" element={<RulesPage />} />
               <Route path="/admin/jogos" element={<AdminMatchesPage />} />
               <Route path="/admin/participantes" element={<AdminParticipantsPage />} />

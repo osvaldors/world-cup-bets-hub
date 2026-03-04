@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Trophy, Shield, Calendar, BookOpen, Settings, Users, ChevronLeft,
+  LayoutDashboard, Trophy, Shield, Calendar, BookOpen, Settings, Users, ChevronLeft, ClipboardEdit,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -14,6 +14,7 @@ const mainItems = [
   { title: "Liga", url: "/liga", icon: Shield },
   { title: "Copa", url: "/copa", icon: Trophy },
   { title: "Jogos", url: "/jogos", icon: Calendar },
+  { title: "Palpites", url: "/palpites", icon: ClipboardEdit },
   { title: "Regras", url: "/regras", icon: BookOpen },
 ];
 
