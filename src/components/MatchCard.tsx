@@ -7,14 +7,21 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, compact }: MatchCardProps) {
-  const isLive = false;
+  const matchDate = new Date(match.date);
   
   return (
     <Card className={`glass overflow-hidden transition-all hover:border-primary/30 ${compact ? "p-3" : "p-4"}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">
-          {new Date(match.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+          </span>
+          {!compact && (
+            <span className="text-xs text-muted-foreground">
+              {matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+        </div>
         {match.played ? (
           <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
             Encerrado
@@ -28,7 +35,7 @@ export function MatchCard({ match, compact }: MatchCardProps) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-xl">{match.homeTeam.flag}</span>
-          <span className={`text-sm font-medium truncate ${compact ? "" : ""}`}>{match.homeTeam.name}</span>
+          <span className={`text-sm font-medium truncate`}>{match.homeTeam.name}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <span className={`text-lg font-bold min-w-[24px] text-center ${match.played ? "" : "text-muted-foreground"}`}>
@@ -40,7 +47,7 @@ export function MatchCard({ match, compact }: MatchCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className={`text-sm font-medium truncate ${compact ? "" : ""}`}>{match.awayTeam.name}</span>
+          <span className={`text-sm font-medium truncate`}>{match.awayTeam.name}</span>
           <span className="text-xl">{match.awayTeam.flag}</span>
         </div>
       </div>

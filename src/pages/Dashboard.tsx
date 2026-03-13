@@ -4,15 +4,19 @@ import { participants, matches } from "@/data/mockData";
 import { MatchCard } from "@/components/MatchCard";
 import { motion } from "framer-motion";
 
-const stats = [
-  { label: "Participantes", value: "16", icon: Users, color: "text-primary" },
-  { label: "Jogos Realizados", value: "8", icon: Calendar, color: "text-success" },
-  { label: "Jogos Restantes", value: "56", icon: Calendar, color: "text-warning" },
-  { label: "Líder Liga", value: "João O.", icon: TrendingUp, color: "text-primary" },
-];
-
 export default function Dashboard() {
-  const topParticipants = [...participants].sort((a, b) => b.totalPoints - a.totalPoints).slice(0, 5);
+  const playedCount = matches.filter(m => m.played).length;
+  const pendingCount = matches.filter(m => !m.played).length;
+  const topByLeague = [...participants].sort((a, b) => b.leaguePoints - a.leaguePoints);
+
+  const stats = [
+    { label: "Participantes", value: String(participants.length), icon: Users, color: "text-primary" },
+    { label: "Jogos Realizados", value: String(playedCount), icon: Calendar, color: "text-success" },
+    { label: "Jogos Restantes", value: String(pendingCount), icon: Calendar, color: "text-warning" },
+    { label: "Líder Liga", value: topByLeague[0]?.name.split(" ")[0] ?? "-", icon: TrendingUp, color: "text-primary" },
+  ];
+
+  const topParticipants = topByLeague.slice(0, 5);
   const recentMatches = matches.filter(m => m.played).slice(-4);
   const upcomingMatches = matches.filter(m => !m.played).slice(0, 4);
 
@@ -81,11 +85,15 @@ export default function Dashboard() {
           <h2 className="font-heading font-semibold flex items-center gap-2">
             <Trophy className="h-5 w-5 text-success" /> Últimos Jogos
           </h2>
-          <div className="space-y-2">
-            {recentMatches.map(m => (
-              <MatchCard key={m.id} match={m} compact />
-            ))}
-          </div>
+          {recentMatches.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum jogo encerrado ainda</p>
+          ) : (
+            <div className="space-y-2">
+              {recentMatches.map(m => (
+                <MatchCard key={m.id} match={m} compact />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Upcoming Matches */}
