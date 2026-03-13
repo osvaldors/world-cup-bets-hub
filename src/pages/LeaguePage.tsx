@@ -47,12 +47,12 @@ export default function LeaguePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-muted-foreground">
-                <th className="text-left px-4 py-3">#</th>
-                <th className="text-left px-4 py-3">Participante</th>
-                <th className="text-center px-4 py-3">Placares Exatos</th>
-                <th className="text-center px-4 py-3">Acertos Vencedor</th>
-                <th className="text-center px-4 py-3">Jogos Palpitados</th>
-                <th className="text-right px-4 py-3 font-bold">Pontos</th>
+                <th className="text-left px-2 sm:px-4 py-3">#</th>
+                <th className="text-left px-2 sm:px-4 py-3">Participante</th>
+                <th className="text-center px-2 sm:px-4 py-3 font-bold">Pts</th>
+                <th className="text-center px-2 sm:px-4 py-3 hidden sm:table-cell">Exatos</th>
+                <th className="text-center px-2 sm:px-4 py-3 hidden sm:table-cell">Vencedor</th>
+                <th className="text-center px-2 sm:px-4 py-3 hidden sm:table-cell">Jogos</th>
               </tr>
             </thead>
             <tbody>
@@ -64,25 +64,25 @@ export default function LeaguePage() {
                   transition={{ delay: i * 0.03 }}
                   className="border-b border-border/50 last:border-0 hover:bg-muted/50 transition-colors"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-2 sm:px-4 py-3">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
                       i < 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}>
                       {i + 1}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                  <td className="px-2 sm:px-4 py-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                         {p.avatar}
                       </div>
-                      <span className="font-medium">{p.name}</span>
+                      <span className="font-medium text-sm truncate">{p.name}</span>
                     </div>
                   </td>
-                  <td className="text-center px-4 py-3 text-success">{Math.floor(Math.random() * 4)}</td>
-                  <td className="text-center px-4 py-3">{Math.floor(Math.random() * 8) + 2}</td>
-                  <td className="text-center px-4 py-3 text-muted-foreground">8</td>
-                  <td className="text-right px-4 py-3 font-bold text-primary text-lg">{p.leaguePoints}</td>
+                  <td className="text-center px-2 sm:px-4 py-3 font-bold text-primary text-lg">{p.leaguePoints}</td>
+                  <td className="text-center px-2 sm:px-4 py-3 text-success hidden sm:table-cell">{Math.floor(Math.random() * 4)}</td>
+                  <td className="text-center px-2 sm:px-4 py-3 hidden sm:table-cell">{Math.floor(Math.random() * 8) + 2}</td>
+                  <td className="text-center px-2 sm:px-4 py-3 text-muted-foreground hidden sm:table-cell">8</td>
                 </motion.tr>
               ))}
             </tbody>
