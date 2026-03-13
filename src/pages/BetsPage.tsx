@@ -1,26 +1,27 @@
 import { useState } from "react";
 import { matches, participants, sampleBets, stageLabels } from "@/data/mockData";
 import { Bet, Match } from "@/types/bolao";
+import { calculateScore, SCORING_RULES } from "@/lib/scoring";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardEdit, Clock, Lock, Check, AlertTriangle } from "lucide-react";
+import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 const DEADLINE_MINUTES = 30;
 
 function isBetOpen(match: Match): boolean {
-  const matchDate = new Date(match.date + "T15:00:00");
+  const matchDate = new Date(match.date);
   const deadline = new Date(matchDate.getTime() - DEADLINE_MINUTES * 60 * 1000);
   return !match.played && new Date() < deadline;
 }
 
 function getDeadlineLabel(match: Match): string {
   if (match.played) return "Jogo encerrado";
-  const matchDate = new Date(match.date + "T15:00:00");
+  const matchDate = new Date(match.date);
   const deadline = new Date(matchDate.getTime() - DEADLINE_MINUTES * 60 * 1000);
   const now = new Date();
   if (now >= deadline) return "Prazo encerrado";
@@ -114,7 +115,23 @@ export default function BetsPage() {
   const upcomingMatches = matches.filter((m) => !m.played);
   const playedMatches = matches.filter((m) => m.played);
 
+  // Calculate total points from played matches
+  const totalPointsFromBets = playedMatches.reduce((sum, match) => {
+    const bet = bets.find(b => b.matchId === match.id && b.participantId === selectedParticipant);
+    if (!bet || match.homeScore === undefined || match.awayScore === undefined) return sum;
+    const result = calculateScore(bet.homeScore, bet.awayScore, match.homeScore, match.awayScore);
+    return sum + result.points;
+  }, 0);
+
   const currentParticipant = participants.find((p) => p.id === selectedParticipant);
+
+  // Group upcoming matches by stage
+  const groupedUpcoming = upcomingMatches.reduce<Record<string, Match[]>>((acc, m) => {
+    const key = m.group ? `Grupo ${m.group}` : stageLabels[m.stage];
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -145,9 +162,17 @@ export default function BetsPage() {
             </SelectContent>
           </Select>
           {currentParticipant && (
-            <span className="text-sm text-primary font-semibold">
-              {currentParticipant.totalPoints} pts
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-primary font-semibold">
+                {currentParticipant.totalPoints} pts (liga)
+              </span>
+              {playedMatches.length > 0 && (
+                <span className="text-sm text-success font-semibold flex items-center gap-1">
+                  <Trophy className="h-3.5 w-3.5" />
+                  {totalPointsFromBets} pts (palpites)
+                </span>
+              )}
+            </div>
           )}
         </div>
       </Card>
@@ -158,14 +183,53 @@ export default function BetsPage() {
           <TabsTrigger value="played">Encerrados ({playedMatches.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming" className="mt-6">
-          {upcomingMatches.length === 0 ? (
+        <TabsContent value="upcoming" className="mt-6 space-y-8">
+          {Object.keys(groupedUpcoming).length === 0 ? (
             <p className="text-muted-foreground text-center py-8">Nenhum jogo pendente</p>
           ) : (
+            Object.entries(groupedUpcoming).map(([stage, stageMatches]) => (
+              <div key={stage}>
+                <h3 className="font-heading font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                  {stage}
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {stageMatches.map((match, i) => {
+                    const open = isBetOpen(match);
+                    const saved = hasBet(match.id);
+                    return (
+                      <motion.div
+                        key={match.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                      >
+                        <BetCard
+                          match={match}
+                          open={open}
+                          saved={saved}
+                          homeScore={formState[match.id]?.homeScore ?? ""}
+                          awayScore={formState[match.id]?.awayScore ?? ""}
+                          onScoreChange={(field, val) => handleScoreChange(match.id, field, val)}
+                          onSave={() => handleSaveBet(match.id)}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="played" className="mt-6">
+          {playedMatches.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Nenhum jogo encerrado ainda</p>
+          ) : (
             <div className="grid md:grid-cols-2 gap-4">
-              {upcomingMatches.map((match, i) => {
-                const open = isBetOpen(match);
-                const saved = hasBet(match.id);
+              {playedMatches.map((match, i) => {
+                const bet = bets.find(
+                  (b) => b.matchId === match.id && b.participantId === selectedParticipant
+                );
                 return (
                   <motion.div
                     key={match.id}
@@ -173,40 +237,12 @@ export default function BetsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                   >
-                    <BetCard
-                      match={match}
-                      open={open}
-                      saved={saved}
-                      homeScore={formState[match.id]?.homeScore ?? ""}
-                      awayScore={formState[match.id]?.awayScore ?? ""}
-                      onScoreChange={(field, val) => handleScoreChange(match.id, field, val)}
-                      onSave={() => handleSaveBet(match.id)}
-                    />
+                    <PlayedBetCard match={match} bet={bet} />
                   </motion.div>
                 );
               })}
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="played" className="mt-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            {playedMatches.map((match, i) => {
-              const bet = bets.find(
-                (b) => b.matchId === match.id && b.participantId === selectedParticipant
-              );
-              return (
-                <motion.div
-                  key={match.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <PlayedBetCard match={match} bet={bet} />
-                </motion.div>
-              );
-            })}
-          </div>
         </TabsContent>
       </Tabs>
     </div>
@@ -232,7 +268,6 @@ function BetCard({
 }) {
   return (
     <Card className={`glass p-4 transition-all ${open ? "hover:border-primary/30" : "opacity-70"}`}>
-      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
@@ -264,7 +299,6 @@ function BetCard({
         </div>
       </div>
 
-      {/* Teams + Inputs */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="text-xl">{match.homeTeam.flag}</span>
@@ -297,7 +331,6 @@ function BetCard({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="mt-3 flex items-center justify-end gap-2">
         {saved && (
           <span className="text-xs text-success flex items-center gap-1">
@@ -312,16 +345,35 @@ function BetCard({
   );
 }
 
+function getScoreColorClass(color: string): string {
+  switch (color) {
+    case "success": return "bg-success/10 border-success/20 text-success";
+    case "primary": return "bg-primary/10 border-primary/20 text-primary";
+    case "warning": return "bg-warning/10 border-warning/20 text-warning";
+    case "muted": return "bg-muted border-border text-muted-foreground";
+    case "destructive": return "bg-destructive/10 border-destructive/20 text-destructive";
+    default: return "bg-muted";
+  }
+}
+
 function PlayedBetCard({ match, bet }: { match: Match; bet?: Bet }) {
-  const isExact =
-    bet && match.homeScore === bet.homeScore && match.awayScore === bet.awayScore;
+  const scoringResult = bet && match.homeScore !== undefined && match.awayScore !== undefined
+    ? calculateScore(bet.homeScore, bet.awayScore, match.homeScore, match.awayScore)
+    : null;
 
   return (
     <Card className="glass p-4 opacity-90">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted-foreground">
-          {new Date(match.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {new Date(match.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+          </span>
+          {match.group && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              Grupo {match.group}
+            </span>
+          )}
+        </div>
         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
           Encerrado
         </span>
@@ -344,26 +396,35 @@ function PlayedBetCard({ match, bet }: { match: Match; bet?: Bet }) {
         </div>
       </div>
 
-      {/* User bet */}
-      <div className={`mt-3 p-2 rounded-lg text-sm flex items-center justify-between ${
+      {/* User bet + scoring */}
+      <div className={`mt-3 p-2.5 rounded-lg text-sm border ${
         bet
-          ? isExact
-            ? "bg-success/10 border border-success/20"
+          ? scoringResult
+            ? getScoreColorClass(scoringResult.color)
             : "bg-muted"
-          : "bg-destructive/10 border border-destructive/20"
+          : "bg-destructive/10 border-destructive/20"
       }`}>
         {bet ? (
-          <>
-            <span className="text-muted-foreground">Seu palpite:</span>
-            <span className="font-bold">
-              {bet.homeScore} × {bet.awayScore}
-              {isExact && <span className="ml-2 text-success">🎯 Exato!</span>}
-            </span>
-          </>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Palpite:</span>
+              <span className="font-bold">{bet.homeScore} × {bet.awayScore}</span>
+            </div>
+            {scoringResult && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-background/50">
+                  {scoringResult.label}
+                </span>
+                <span className="font-bold text-lg">
+                  +{scoringResult.points}
+                </span>
+              </div>
+            )}
+          </div>
         ) : (
           <span className="flex items-center gap-1.5 text-destructive">
             <AlertTriangle className="h-3.5 w-3.5" />
-            Sem palpite registrado
+            Sem palpite registrado — 0 pts
           </span>
         )}
       </div>

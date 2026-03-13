@@ -17,7 +17,7 @@ export interface Match {
   played: boolean;
 }
 
-export type MatchStage = 'group' | 'round-of-16' | 'quarter-final' | 'semi-final' | 'third-place' | 'final';
+export type MatchStage = 'group' | 'round-of-32' | 'round-of-16' | 'quarter-final' | 'semi-final' | 'third-place' | 'final';
 
 export interface Bet {
   id: string;
