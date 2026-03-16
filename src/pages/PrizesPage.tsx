@@ -10,6 +10,7 @@ const prizes = [
   { label: "3º da Liga", value: "R$ 200", icon: Medal, color: "text-warning", bg: "bg-warning/10" },
 ];
 
+
 export default function PrizesPage() {
   const totalPrize = 120 * 16;
   const totalDistributed = 700 + 400 + 300 + 200 + 200;
