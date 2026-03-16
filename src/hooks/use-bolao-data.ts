@@ -172,11 +172,61 @@ export function useParticipantsWithPoints() {
       const bets = await fetchBets();
       const pointsMap = await computeParticipantPoints(matches, bets);
 
-      return participants.map((p) => ({
-        ...p,
-        totalPoints: pointsMap.get(p.id) || 0,
-        leaguePoints: pointsMap.get(p.id) || 0,
-      }));
+      // Calcular estatísticas detalhadas para cada participante
+      const participantsWithStats = participants.map((p) => {
+        const stats = {
+          exactScore: 0,
+          winnerAndBalance: 0,
+          winnerAndGoals: 0,
+          correctWinner: 0,
+          correctDraw: 0,
+          correctGoals: 0,
+          incorrect: 0,
+        };
+
+        // Buscar todas as apostas deste participante
+        const participantBets = bets.filter((b) => b.participantId === p.id);
+
+        participantBets.forEach((bet) => {
+          const match = matches.find((m) => m.id === bet.matchId);
+          if (!match?.played || match.homeScore === undefined || match.awayScore === undefined) {
+            return;
+          }
+
+          const result = calculateScore(
+            bet.homeScore,
+            bet.awayScore,
+            match.homeScore,
+            match.awayScore
+          );
+
+          // Contar cada tipo de acerto baseado no resultado
+          if (result.exactScore) {
+            stats.exactScore++;
+          } else if (result.winnerAndBalance) {
+            stats.winnerAndBalance++;
+          } else if (result.winnerAndGoals) {
+            stats.winnerAndGoals++;
+          } else if (result.correctWinner) {
+            stats.correctWinner++;
+          } else if (result.correctDraw) {
+            stats.correctDraw++;
+          } else if (result.correctGoals) {
+            stats.correctGoals++;
+          } else {
+            stats.incorrect++;
+          }
+        });
+
+        return {
+          ...p,
+          totalPoints: pointsMap.get(p.id) || 0,
+          leaguePoints: pointsMap.get(p.id) || 0,
+          stats,
+        };
+      });
+
+      return participantsWithStats;
     },
   });
 }
