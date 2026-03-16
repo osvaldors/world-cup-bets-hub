@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Trophy, Shield, Calendar, BookOpen, Settings, Users, ChevronLeft, ClipboardEdit,
+  LayoutDashboard, Trophy, Shield, Calendar, BookOpen, Settings, Users, ChevronLeft, ClipboardEdit, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
