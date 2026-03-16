@@ -9,6 +9,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
+import { CollapsibleNav } from "@/components/CollapsibleNav";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -20,13 +21,42 @@ const mainItems = [
   { title: "Premiação", url: "/premiacao", icon: DollarSign },
 ];
 
-const simulatorItems = [
-  { title: "Simular Jogos", url: "/simulador/jogos", icon: Calendar },
-  { title: "Classificação Copa", url: "/simulador/copa", icon: Trophy },
-  { title: "Chaveamento", url: "/simulador/chaveamento", icon: GitBranch },
-  { title: "Classificação Liga", url: "/simulador/liga", icon: Shield },
-  { title: "Simular Palpites", url: "/simulador/palpites", icon: ClipboardEdit },
-];
+const simulatorNav = {
+  label: "Simulador",
+  icon: <FlaskConical className="h-4 w-4" />,
+  children: [
+    {
+      label: "Simular Jogos",
+      path: "/simulador/jogos",
+      icon: <Calendar className="h-4 w-4" />,
+    },
+    {
+      label: "Copa",
+      icon: <Trophy className="h-4 w-4" />,
+      children: [
+        {
+          label: "Classificação",
+          path: "/simulador/copa",
+        },
+        {
+          label: "Chaveamento",
+          path: "/simulador/chaveamento",
+          icon: <GitBranch className="h-4 w-4" />,
+        },
+      ],
+    },
+    {
+      label: "Liga",
+      path: "/simulador/liga",
+      icon: <Shield className="h-4 w-4" />,
+    },
+    {
+      label: "Palpites",
+      path: "/simulador/palpites",
+      icon: <ClipboardEdit className="h-4 w-4" />,
+    },
+  ],
+};
 
 const adminItems = [
   { title: "Gerenciar Jogos", url: "/admin/jogos", icon: Calendar },
@@ -81,25 +111,49 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-amber-400 flex items-center gap-2">
-            <FlaskConical className="h-3 w-3" /> {!collapsed && "Simulador"}
+            {/* <FlaskConical className="h-3 w-3" /> {!collapsed && "Simulador"} */}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {simulatorItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-amber-400/10"
-                      activeClassName="bg-amber-400/10 text-amber-500 font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {collapsed ? (
+              <SidebarMenu>
+                {simulatorNav.children?.map((item) => {
+                  if (item.children) {
+                    return item.children.map((subItem) => (
+                      <SidebarMenuItem key={subItem.path}>
+                        <SidebarMenuButton asChild tooltip={subItem.label}>
+                          <NavLink
+                            to={subItem.path!}
+                            className="hover:bg-amber-400/10"
+                            activeClassName="bg-amber-400/10 text-amber-500 font-medium"
+                          >
+                            {subItem.icon || <Trophy className="mr-2 h-4 w-4" />}
+                            <span className="sr-only">{subItem.label}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ));
+                  }
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton asChild tooltip={item.label}>
+                        <NavLink
+                          to={item.path!}
+                          className="hover:bg-amber-400/10"
+                          activeClassName="bg-amber-400/10 text-amber-500 font-medium"
+                        >
+                          {item.icon}
+                          <span className="sr-only">{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            ) : (
+              <div className="space-y-1 -ml-2">
+                <CollapsibleNav item={simulatorNav} />
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 

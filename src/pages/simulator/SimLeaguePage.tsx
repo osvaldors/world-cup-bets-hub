@@ -56,9 +56,9 @@ export default function SimLeaguePage() {
                 >
                   <td className="px-3 py-3">
                     <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${i === 0 ? "bg-yellow-400 text-yellow-900" :
-                        i === 1 ? "bg-slate-400 text-slate-900" :
-                          i === 2 ? "bg-amber-700 text-white" :
-                            "bg-muted text-muted-foreground"
+                      i === 1 ? "bg-slate-400 text-slate-900" :
+                        i === 2 ? "bg-amber-700 text-white" :
+                          "bg-muted text-muted-foreground"
                       }`}>
                       {i + 1}
                     </span>
