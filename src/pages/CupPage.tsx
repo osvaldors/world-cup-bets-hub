@@ -142,7 +142,9 @@ export default function CupPage() {
             <p className="text-muted-foreground text-center py-8">Cadastre participantes com grupo da copa para ver a classificação</p>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {Object.entries(cupGroupStandings).map(([group, standings]) => (
+              {Object.entries(cupGroupStandings)
+                .sort(([groupA], [groupB]) => groupA.localeCompare(groupB))
+                .map(([group, standings]) => (
                 <GroupTable key={group} group={group} standings={standings} />
               ))}
             </div>

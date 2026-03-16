@@ -67,12 +67,12 @@ export default function PrizesPage() {
           <span className="text-sm text-muted-foreground font-medium">Total distribuído</span>
           <span className="text-lg font-heading font-bold text-primary">R$ {totalDistributed}</span>
         </div>
-        {totalPrize - totalDistributed > 0 && (
+        {/* {totalPrize - totalDistributed > 0 && (
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm text-muted-foreground font-medium">Reserva/organização</span>
             <span className="text-sm font-heading font-bold text-warning">R$ {totalPrize - totalDistributed}</span>
           </div>
-        )}
+        )} */}
       </Card>
     </div>
   );

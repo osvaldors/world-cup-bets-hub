@@ -118,7 +118,9 @@ export function CupRounds() {
               <TabsContent key={round} value={String(round)} className="mt-4">
                 <p className="text-xs text-muted-foreground mb-4">Pontos baseados nos palpites da {round}ª rodada da fase de grupos da Copa do Mundo</p>
                 <div className="grid md:grid-cols-2 gap-6">
-                  {Object.entries(confrontations).map(([cupGroup, rounds]) => {
+                  {Object.entries(confrontations)
+                    .sort(([groupA], [groupB]) => groupA.localeCompare(groupB))
+                    .map(([cupGroup, rounds]) => {
                     const roundData = rounds[round - 1];
                     if (!roundData) return null;
                     return (
