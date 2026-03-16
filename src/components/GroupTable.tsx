@@ -20,9 +20,11 @@ export function GroupTable({ group, standings }: GroupTableProps) {
               <th className="text-center px-2 py-2">P</th>
               <th className="text-center px-2 py-2">V</th>
               <th className="text-center px-2 py-2">E</th>
-              <th className="text-center px-2 py-2">D</th>
-              <th className="text-center px-2 py-2">SG</th>
-              <th className="text-center px-2 py-2 font-bold">Pts</th>
+               <th className="text-center px-2 py-2">D</th>
+               <th className="text-center px-2 py-2">GP</th>
+               <th className="text-center px-2 py-2">GC</th>
+               <th className="text-center px-2 py-2">SG</th>
+               <th className="text-center px-2 py-2 font-bold">Pts</th>
             </tr>
           </thead>
           <tbody>
@@ -45,6 +47,8 @@ export function GroupTable({ group, standings }: GroupTableProps) {
                 <td className="text-center px-2 py-2 text-success">{s.wins}</td>
                 <td className="text-center px-2 py-2">{s.draws}</td>
                 <td className="text-center px-2 py-2 text-destructive">{s.losses}</td>
+                <td className="text-center px-2 py-2">{s.goalsFor}</td>
+                <td className="text-center px-2 py-2">{s.goalsAgainst}</td>
                 <td className="text-center px-2 py-2">{s.goalDifference > 0 ? `+${s.goalDifference}` : s.goalDifference}</td>
                 <td className="text-center px-2 py-2 font-bold text-primary">{s.points}</td>
               </tr>

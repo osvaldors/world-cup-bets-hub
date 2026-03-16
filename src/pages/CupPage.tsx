@@ -55,7 +55,11 @@ function computeCupGroupStandings(
     });
 
     rounds.forEach((matchups, roundIdx) => {
-      const roundMatchIds = allRoundMatches[roundIdx].map(m => m.id);
+      const roundMatches = allRoundMatches[roundIdx];
+      const anyPlayed = roundMatches.some(m => m.played);
+      if (!anyPlayed) return;
+
+      const roundMatchIds = roundMatches.map(m => m.id);
       
       matchups.forEach(({ p1, p2 }) => {
         const p1Points = roundMatchIds.reduce((sum, matchId) => {
