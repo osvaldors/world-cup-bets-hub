@@ -2,6 +2,7 @@ import { Trophy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GroupTable } from "@/components/GroupTable";
 import { CupBracket } from "@/components/CupBracket";
+import { CupRounds } from "@/components/CupRounds";
 import { cupGroupStandings } from "@/data/mockData";
 
 export default function CupPage() {
@@ -12,14 +13,19 @@ export default function CupPage() {
           <Trophy className="h-8 w-8 text-primary" />
           Copa do Bolão
         </h1>
-        <p className="text-muted-foreground mt-1">Fase de grupos e mata-mata entre os participantes</p>
+        <p className="text-muted-foreground mt-1">Fase de grupos, confrontos e mata-mata entre os participantes</p>
       </div>
 
-      <Tabs defaultValue="groups" className="w-full">
+      <Tabs defaultValue="rounds" className="w-full">
         <TabsList className="glass">
-          <TabsTrigger value="groups">Fase de Grupos</TabsTrigger>
+          <TabsTrigger value="rounds">Confrontos</TabsTrigger>
+          <TabsTrigger value="groups">Classificação</TabsTrigger>
           <TabsTrigger value="bracket">Chaveamento</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="rounds" className="mt-6">
+          <CupRounds />
+        </TabsContent>
 
         <TabsContent value="groups" className="mt-6">
           <div className="grid md:grid-cols-2 gap-6">

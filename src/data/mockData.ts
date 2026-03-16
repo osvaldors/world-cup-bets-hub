@@ -288,7 +288,7 @@ export const cupBracketMatches: CupBracketMatch[] = [
 // ========================
 export const stageLabels: Record<string, string> = {
   'group': 'Fase de Grupos',
-  'round-of-32': '32 Avos de Final',
+  'round-of-32': '16 Avos de Final',
   'round-of-16': 'Oitavas de Final',
   'quarter-final': 'Quartas de Final',
   'semi-final': 'Semifinal',
