@@ -1,5 +1,6 @@
 import {
   LayoutDashboard, Trophy, Shield, Calendar, BookOpen, Settings, Users, ChevronLeft, ClipboardEdit, DollarSign,
+  FlaskConical, GitBranch,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,6 +18,14 @@ const mainItems = [
   { title: "Palpites", url: "/palpites", icon: ClipboardEdit },
   { title: "Regras", url: "/regras", icon: BookOpen },
   { title: "Premiação", url: "/premiacao", icon: DollarSign },
+];
+
+const simulatorItems = [
+  { title: "Simular Jogos", url: "/simulador/jogos", icon: Calendar },
+  { title: "Classificação Copa", url: "/simulador/copa", icon: Trophy },
+  { title: "Chaveamento", url: "/simulador/chaveamento", icon: GitBranch },
+  { title: "Classificação Liga", url: "/simulador/liga", icon: Shield },
+  { title: "Simular Palpites", url: "/simulador/palpites", icon: ClipboardEdit },
 ];
 
 const adminItems = [
@@ -53,7 +62,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
@@ -71,12 +80,36 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
+          <SidebarGroupLabel className="text-amber-400 flex items-center gap-2">
+            <FlaskConical className="h-3 w-3" /> {!collapsed && "Simulador"}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {simulatorItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <NavLink
+                      to={item.url}
+                      className="hover:bg-amber-400/10"
+                      activeClassName="bg-amber-400/10 text-amber-500 font-medium"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
           <SidebarGroupLabel>Administração</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       className="hover:bg-accent/10"

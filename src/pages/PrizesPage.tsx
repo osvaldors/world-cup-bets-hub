@@ -3,17 +3,18 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
 const prizes = [
-  { label: "Campeão da Liga", value: "R$ 700", icon: Shield, color: "text-primary", bg: "bg-primary/10" },
-  { label: "Campeão da Copa", value: "R$ 400", icon: Trophy, color: "text-primary", bg: "bg-primary/10" },
+  { label: "Campeão da Liga", value: "R$ 800", icon: Shield, color: "text-primary", bg: "bg-primary/40" },
   { label: "Vice da Liga", value: "R$ 300", icon: Shield, color: "text-muted-foreground", bg: "bg-muted" },
-  { label: "Vice da Copa", value: "R$ 200", icon: Trophy, color: "text-muted-foreground", bg: "bg-muted" },
   { label: "3º da Liga", value: "R$ 200", icon: Medal, color: "text-warning", bg: "bg-warning/10" },
+  { label: "Campeão da Copa", value: "R$ 400", icon: Trophy, color: "text-primary", bg: "bg-primary/40" },
+  { label: "Vice da Copa", value: "R$ 200", icon: Trophy, color: "text-muted-foreground", bg: "bg-muted" },
+
 ];
 
 
 export default function PrizesPage() {
   const totalPrize = 120 * 16;
-  const totalDistributed = 700 + 400 + 300 + 200 + 200;
+  const totalDistributed = 800 + 400 + 300 + 200 + 200;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">

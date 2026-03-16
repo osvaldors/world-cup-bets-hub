@@ -17,6 +17,13 @@ import AdminParticipantsPage from "./pages/AdminParticipantsPage";
 import AdminConfigPage from "./pages/AdminConfigPage";
 import NotFound from "./pages/NotFound";
 
+import { SimulatorProvider } from "./contexts/SimulatorContext";
+import SimMatchesPage from "./pages/simulator/SimMatchesPage";
+import SimCupStandingsPage from "./pages/simulator/SimCupStandingsPage";
+import SimBracketPage from "./pages/simulator/SimBracketPage";
+import SimLeaguePage from "./pages/simulator/SimLeaguePage";
+import SimBetsPage from "./pages/simulator/SimBetsPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -26,21 +33,31 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/liga" element={<LeaguePage />} />
-              <Route path="/copa" element={<CupPage />} />
-              <Route path="/jogos" element={<MatchesPage />} />
-              <Route path="/palpites" element={<BetsPage />} />
-              <Route path="/regras" element={<RulesPage />} />
-              <Route path="/premiacao" element={<PrizesPage />} />
-              <Route path="/admin/jogos" element={<AdminMatchesPage />} />
-              <Route path="/admin/participantes" element={<AdminParticipantsPage />} />
-              <Route path="/admin/config" element={<AdminConfigPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
+          <SimulatorProvider>
+            <AppLayout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/liga" element={<LeaguePage />} />
+                <Route path="/copa" element={<CupPage />} />
+                <Route path="/jogos" element={<MatchesPage />} />
+                <Route path="/palpites" element={<BetsPage />} />
+                <Route path="/regras" element={<RulesPage />} />
+                <Route path="/premiacao" element={<PrizesPage />} />
+                
+                {/* Simulador Routes */}
+                <Route path="/simulador/jogos" element={<SimMatchesPage />} />
+                <Route path="/simulador/copa" element={<SimCupStandingsPage />} />
+                <Route path="/simulador/chaveamento" element={<SimBracketPage />} />
+                <Route path="/simulador/liga" element={<SimLeaguePage />} />
+                <Route path="/simulador/palpites" element={<SimBetsPage />} />
+
+                <Route path="/admin/jogos" element={<AdminMatchesPage />} />
+                <Route path="/admin/participantes" element={<AdminParticipantsPage />} />
+                <Route path="/admin/config" element={<AdminConfigPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppLayout>
+          </SimulatorProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
