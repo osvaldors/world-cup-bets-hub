@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy } from "lucide-react";
+import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy, CalendarDays, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
 const DEADLINE_MINUTES = 30;
+
+type ViewMode = "date" | "group";
 
 function isBetOpen(match: Match): boolean {
   const matchDate = new Date(match.date);
@@ -40,10 +42,31 @@ interface BetFormState {
   [matchId: string]: { homeScore: string; awayScore: string };
 }
 
+function groupMatchesByDate(matchList: Match[]): Record<string, Match[]> {
+  const sorted = [...matchList].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return sorted.reduce<Record<string, Match[]>>((acc, m) => {
+    const d = new Date(m.date);
+    const dateKey = d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(m);
+    return acc;
+  }, {});
+}
+
+function groupMatchesByGroup(matchList: Match[]): Record<string, Match[]> {
+  return matchList.reduce<Record<string, Match[]>>((acc, m) => {
+    const key = m.group ? `Grupo ${m.group}` : stageLabels[m.stage];
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
+}
+
 export default function BetsPage() {
   const { data: matches = [] } = useMatches();
   const { data: participants = [] } = useParticipants();
   const [selectedParticipant, setSelectedParticipant] = useState<string>("");
+  const [viewMode, setViewMode] = useState<ViewMode>("date");
   const invalidate = useInvalidate();
 
   const { data: bets = [], refetch: refetchBets } = useQuery({
@@ -119,12 +142,48 @@ export default function BetsPage() {
 
   const currentParticipant = participants.find((p) => p.id === selectedParticipant);
 
-  const groupedUpcoming = upcomingMatches.reduce<Record<string, Match[]>>((acc, m) => {
-    const key = m.group ? `Grupo ${m.group}` : stageLabels[m.stage];
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(m);
-    return acc;
-  }, {});
+  const groupedUpcoming = viewMode === "date" ? groupMatchesByDate(upcomingMatches) : groupMatchesByGroup(upcomingMatches);
+  const groupedPlayed = viewMode === "date" ? groupMatchesByDate(playedMatches) : groupMatchesByGroup(playedMatches);
+
+  const renderMatchGrid = (grouped: Record<string, Match[]>, type: "upcoming" | "played") => {
+    if (Object.keys(grouped).length === 0) {
+      return <p className="text-muted-foreground text-center py-8">{type === "upcoming" ? "Nenhum jogo pendente" : "Nenhum jogo encerrado ainda"}</p>;
+    }
+
+    return Object.entries(grouped).map(([label, sectionMatches]) => (
+      <div key={label}>
+        <h3 className="font-heading font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">{label}</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          {sectionMatches.map((match, i) => {
+            if (type === "upcoming") {
+              const open = isBetOpen(match);
+              const saved = hasBet(match.id);
+              return (
+                <motion.div key={match.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                  <BetCard
+                    match={match}
+                    open={open}
+                    saved={saved}
+                    homeScore={formState[match.id]?.homeScore ?? ""}
+                    awayScore={formState[match.id]?.awayScore ?? ""}
+                    onScoreChange={(field, val) => handleScoreChange(match.id, field, val)}
+                    onSave={() => handleSaveBet(match.id)}
+                  />
+                </motion.div>
+              );
+            } else {
+              const bet = bets.find((b) => b.matchId === match.id);
+              return (
+                <motion.div key={match.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <PlayedBetCard match={match} bet={bet} />
+                </motion.div>
+              );
+            }
+          })}
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -150,6 +209,24 @@ export default function BetsPage() {
               <Trophy className="h-3.5 w-3.5" /> {totalPointsFromBets} pts
             </span>
           )}
+          <div className="sm:ml-auto flex items-center gap-1 bg-muted rounded-md p-1">
+            <Button
+              size="sm"
+              variant={viewMode === "date" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs gap-1.5"
+              onClick={() => setViewMode("date")}
+            >
+              <CalendarDays className="h-3.5 w-3.5" /> Por Data
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "group" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs gap-1.5"
+              onClick={() => setViewMode("group")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" /> Por Grupo
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -160,57 +237,16 @@ export default function BetsPage() {
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-6 space-y-8">
-          {Object.keys(groupedUpcoming).length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhum jogo pendente</p>
-          ) : (
-            Object.entries(groupedUpcoming).map(([stage, stageMatches]) => (
-              <div key={stage}>
-                <h3 className="font-heading font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">{stage}</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {stageMatches.map((match, i) => {
-                    const open = isBetOpen(match);
-                    const saved = hasBet(match.id);
-                    return (
-                      <motion.div key={match.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-                        <BetCard
-                          match={match}
-                          open={open}
-                          saved={saved}
-                          homeScore={formState[match.id]?.homeScore ?? ""}
-                          awayScore={formState[match.id]?.awayScore ?? ""}
-                          onScoreChange={(field, val) => handleScoreChange(match.id, field, val)}
-                          onSave={() => handleSaveBet(match.id)}
-                        />
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          )}
+          {renderMatchGrid(groupedUpcoming, "upcoming")}
         </TabsContent>
 
-        <TabsContent value="played" className="mt-6">
-          {playedMatches.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhum jogo encerrado ainda</p>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {playedMatches.map((match, i) => {
-                const bet = bets.find((b) => b.matchId === match.id);
-                return (
-                  <motion.div key={match.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                    <PlayedBetCard match={match} bet={bet} />
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+        <TabsContent value="played" className="mt-6 space-y-8">
+          {renderMatchGrid(groupedPlayed, "played")}
         </TabsContent>
       </Tabs>
     </div>
   );
 }
-
 function BetCard({ match, open, saved, homeScore, awayScore, onScoreChange, onSave }: {
   match: Match; open: boolean; saved: boolean; homeScore: string; awayScore: string;
   onScoreChange: (field: "homeScore" | "awayScore", val: string) => void; onSave: () => void;
