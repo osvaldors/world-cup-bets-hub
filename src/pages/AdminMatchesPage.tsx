@@ -50,6 +50,17 @@ export default function AdminMatchesPage() {
     }
   };
 
+  const handleClearResult = async (matchId: string) => {
+    try {
+      await clearMatchResult(matchId);
+      toast({ title: "Resultado removido!", description: "O jogo voltou para pendente." });
+      invalidate("matches", "participants-with-points");
+      setEditingMatch(null);
+    } catch (err: any) {
+      toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" });
+    }
+  };
+
   const startEditing = (match: Match) => {
     setEditingMatch(match.id);
     setScores((s) => ({
