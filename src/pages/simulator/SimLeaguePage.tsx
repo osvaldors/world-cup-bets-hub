@@ -75,25 +75,25 @@ export default function SimLeaguePage() {
                     </span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-green-500 font-semibold">{p.simStats?.exactScore || 0}</span>
+                    <span className="text-green-500 font-semibold">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-emerald-400">{p.simStats?.winnerAndBalance || 0}</span>
+                    <span className="text-emerald-400">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-blue-400">{p.simStats?.winnerAndGoals || 0}</span>
+                    <span className="text-blue-400">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-cyan-400">{p.simStats?.correctWinner || 0}</span>
+                    <span className="text-cyan-400">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-amber-400">{p.simStats?.correctDraw || 0}</span>
+                    <span className="text-amber-400">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-purple-400">{p.simStats?.correctGoals || 0}</span>
+                    <span className="text-purple-400">—</span>
                   </td>
                   <td className="text-center px-2 py-3">
-                    <span className="text-red-400">{p.simStats?.incorrect || 0}</span>
+                    <span className="text-red-400">—</span>
                   </td>
                 </motion.tr>
               ))}

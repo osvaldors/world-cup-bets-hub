@@ -200,22 +200,14 @@ export function useParticipantsWithPoints() {
             match.awayScore
           );
 
-          // Contar cada tipo de acerto baseado no resultado
-          if (result.exactScore) {
-            stats.exactScore++;
-          } else if (result.winnerAndBalance) {
-            stats.winnerAndBalance++;
-          } else if (result.winnerAndGoals) {
-            stats.winnerAndGoals++;
-          } else if (result.correctWinner) {
-            stats.correctWinner++;
-          } else if (result.correctDraw) {
-            stats.correctDraw++;
-          } else if (result.correctGoals) {
-            stats.correctGoals++;
-          } else {
-            stats.incorrect++;
-          }
+          // Contar cada tipo de acerto baseado nos pontos
+          if (result.points === 25) stats.exactScore++;
+          else if (result.points === 18) stats.winnerAndBalance++;
+          else if (result.points === 15 && result.label.includes("Gols")) stats.winnerAndGoals++;
+          else if (result.points === 15) stats.correctDraw++;
+          else if (result.points === 10) stats.correctWinner++;
+          else if (result.points === 3) stats.correctGoals++;
+          else stats.incorrect++;
         });
 
         return {
