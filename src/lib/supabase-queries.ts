@@ -83,6 +83,14 @@ export async function updateMatchResult(
   if (error) throw error;
 }
 
+export async function clearMatchResult(matchId: string) {
+  const { error } = await supabase
+    .from("matches")
+    .update({ home_score: null, away_score: null, played: false })
+    .eq("id", matchId);
+  if (error) throw error;
+}
+
 export async function updateMatchTeams(
   matchId: string,
   homeTeamId: string,

@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Plus, Check } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { updateMatchResult, updateMatchTeams, stageLabels } from "@/lib/supabase-queries";
+import { updateMatchResult, updateMatchTeams, clearMatchResult, stageLabels } from "@/lib/supabase-queries";
 
 const knockoutStages = ["round-of-32", "round-of-16", "quarter-final", "semi-final", "third-place", "final"];
 
@@ -47,6 +47,17 @@ export default function AdminMatchesPage() {
       setEditingMatch(null);
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleClearResult = async (matchId: string) => {
+    try {
+      await clearMatchResult(matchId);
+      toast({ title: "Resultado removido!", description: "O jogo voltou para pendente." });
+      invalidate("matches", "participants-with-points");
+      setEditingMatch(null);
+    } catch (err: any) {
+      toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" });
     }
   };
 
@@ -128,11 +139,21 @@ export default function AdminMatchesPage() {
 
           <div className="flex items-center gap-2">
             {editing ? (
-              <Button size="sm" onClick={() => handleSave(match.id)} className="gradient-primary text-primary-foreground">
-                <Check className="h-4 w-4 mr-1" /> Salvar
-              </Button>
+              <>
+                <Button size="sm" onClick={() => handleSave(match.id)} className="gradient-primary text-primary-foreground">
+                  <Check className="h-4 w-4 mr-1" /> Salvar
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditingMatch(null)}>Cancelar</Button>
+              </>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => startEditing(match)}>Editar</Button>
+              <>
+                <Button size="sm" variant="outline" onClick={() => startEditing(match)}>Editar</Button>
+                {match.played && (
+                  <Button size="sm" variant="destructive" onClick={() => handleClearResult(match.id)}>
+                    <X className="h-4 w-4 mr-1" /> Limpar
+                  </Button>
+                )}
+              </>
             )}
             {match.played && <span className="text-xs text-success font-medium">✓ Encerrado</span>}
           </div>
