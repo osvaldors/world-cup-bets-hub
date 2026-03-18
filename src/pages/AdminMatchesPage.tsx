@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Plus, Check } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { updateMatchResult, updateMatchTeams, stageLabels } from "@/lib/supabase-queries";
+import { updateMatchResult, updateMatchTeams, clearMatchResult, stageLabels } from "@/lib/supabase-queries";
 
 const knockoutStages = ["round-of-32", "round-of-16", "quarter-final", "semi-final", "third-place", "final"];
 
