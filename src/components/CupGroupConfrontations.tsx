@@ -1,8 +1,7 @@
-import { useMatches, useParticipants, useAllBets } from "@/hooks/use-bolao-data";
 import { calculateScore } from "@/lib/scoring";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Match, Participant } from "@/types/bolao";
+import { Match, Participant, Bet } from "@/types/bolao";
 import { motion } from "framer-motion";
 
 interface CupMatchup {
@@ -38,12 +37,13 @@ function MatchupCard({ matchup, idx }: { matchup: CupMatchup; idx: number }) {
   );
 }
 
-export function CupRounds() {
-  const { data: matches = [] } = useMatches();
-  const { data: participants = [] } = useParticipants();
-  const { data: bets = [] } = useAllBets();
+interface Props {
+  matches: Match[];
+  participants: Participant[];
+  bets: Bet[];
+}
 
-  // Group participants by cup group
+export function CupGroupConfrontations({ matches, participants, bets }: Props) {
   const cupGroups: Record<string, Participant[]> = {};
   participants.forEach((p) => {
     if (p.cupGroup) {
@@ -52,7 +52,6 @@ export function CupRounds() {
     }
   });
 
-  // Get group stage matches organized by round
   const groups = [...new Set(matches.filter(m => m.stage === "group").map(m => m.group).filter(Boolean))] as string[];
   const groupMatchesByRound: Record<string, Match[][]> = {};
   groups.forEach((g) => {
@@ -68,12 +67,10 @@ export function CupRounds() {
       const match = matches.find((m) => m.id === matchId);
       const bet = bets.find((b) => b.matchId === matchId && b.participantId === participant.id);
       if (!match?.played || !bet || match.homeScore === undefined || match.awayScore === undefined) return sum;
-      const result = calculateScore(bet.homeScore, bet.awayScore, match.homeScore, match.awayScore);
-      return sum + result.points;
+      return sum + calculateScore(bet.homeScore, bet.awayScore, match.homeScore, match.awayScore).points;
     }, 0);
   }
 
-  // Build confrontations
   const confrontations: Record<string, { round: number; matchups: CupMatchup[] }[]> = {};
   Object.entries(cupGroups).forEach(([cupGroup, ps]) => {
     if (ps.length < 4) return;
@@ -92,6 +89,8 @@ export function CupRounds() {
     }));
   });
 
+  if (Object.keys(confrontations).length === 0) return null;
+
   const knockoutRounds = [
     { label: "Quartas de Final", description: "Pontos dos palpites: 16 Avos + Oitavas", wcStages: ["round-of-32", "round-of-16"] },
     { label: "Semifinais", description: "Pontos dos palpites: Quartas + Semifinais da Copa", wcStages: ["quarter-final", "semi-final"] },
@@ -102,25 +101,22 @@ export function CupRounds() {
   }));
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="font-heading text-lg font-semibold mb-4">Fase de Grupos — Confrontos</h2>
-        {Object.keys(confrontations).length === 0 ? (
-          <p className="text-muted-foreground text-sm">Cadastre participantes com grupo da copa para ver os confrontos</p>
-        ) : (
-          <Tabs defaultValue="1" className="w-full">
-            <TabsList className="glass">
-              <TabsTrigger value="1">Rodada 1</TabsTrigger>
-              <TabsTrigger value="2">Rodada 2</TabsTrigger>
-              <TabsTrigger value="3">Rodada 3</TabsTrigger>
-            </TabsList>
-            {[1, 2, 3].map((round) => (
-              <TabsContent key={round} value={String(round)} className="mt-4">
-                <p className="text-xs text-muted-foreground mb-4">Pontos baseados nos palpites da {round}ª rodada da fase de grupos da Copa do Mundo</p>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {Object.entries(confrontations)
-                    .sort(([groupA], [groupB]) => groupA.localeCompare(groupB))
-                    .map(([cupGroup, rounds]) => {
+    <>
+      <div className="space-y-4">
+        <h2 className="font-heading text-lg font-semibold">Fase de Grupos — Confrontos</h2>
+        <Tabs defaultValue="1" className="w-full">
+          <TabsList className="glass">
+            <TabsTrigger value="1">Rodada 1</TabsTrigger>
+            <TabsTrigger value="2">Rodada 2</TabsTrigger>
+            <TabsTrigger value="3">Rodada 3</TabsTrigger>
+          </TabsList>
+          {[1, 2, 3].map((round) => (
+            <TabsContent key={round} value={String(round)} className="mt-4">
+              <p className="text-xs text-muted-foreground mb-4">Pontos baseados nos palpites da {round}ª rodada da fase de grupos da Copa do Mundo</p>
+              <div className="grid md:grid-cols-2 gap-6">
+                {Object.entries(confrontations)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([cupGroup, rounds]) => {
                     const roundData = rounds[round - 1];
                     if (!roundData) return null;
                     return (
@@ -132,11 +128,10 @@ export function CupRounds() {
                       </div>
                     );
                   })}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-        )}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
 
       <div>
@@ -153,6 +148,6 @@ export function CupRounds() {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 }
