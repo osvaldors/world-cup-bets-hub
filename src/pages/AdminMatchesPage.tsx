@@ -139,11 +139,21 @@ export default function AdminMatchesPage() {
 
           <div className="flex items-center gap-2">
             {editing ? (
-              <Button size="sm" onClick={() => handleSave(match.id)} className="gradient-primary text-primary-foreground">
-                <Check className="h-4 w-4 mr-1" /> Salvar
-              </Button>
+              <>
+                <Button size="sm" onClick={() => handleSave(match.id)} className="gradient-primary text-primary-foreground">
+                  <Check className="h-4 w-4 mr-1" /> Salvar
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditingMatch(null)}>Cancelar</Button>
+              </>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => startEditing(match)}>Editar</Button>
+              <>
+                <Button size="sm" variant="outline" onClick={() => startEditing(match)}>Editar</Button>
+                {match.played && (
+                  <Button size="sm" variant="destructive" onClick={() => handleClearResult(match.id)}>
+                    <X className="h-4 w-4 mr-1" /> Limpar
+                  </Button>
+                )}
+              </>
             )}
             {match.played && <span className="text-xs text-success font-medium">✓ Encerrado</span>}
           </div>
