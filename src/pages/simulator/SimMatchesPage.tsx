@@ -121,8 +121,12 @@ export default function SimMatchesPage() {
     );
   };
 
-  const groupMatches = matches.filter((m) => m.stage === "group");
-  const koMatches = matches.filter((m) => m.stage !== "group");
+  // Filter out knockout matches without assigned teams
+  const validMatches = matches.filter(m =>
+    m.stage === "group" || (m.homeTeam.id !== "tbd" && m.awayTeam.id !== "tbd")
+  );
+  const groupMatches = validMatches.filter((m) => m.stage === "group");
+  const koMatches = validMatches.filter((m) => m.stage !== "group");
   const groupedByGroup = groupMatches.reduce<Record<string, Match[]>>((acc, m) => {
     const k = m.group ?? "?";
     (acc[k] = acc[k] ?? []).push(m);

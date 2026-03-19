@@ -5,7 +5,12 @@ import { useMatches } from "@/hooks/use-bolao-data";
 import { stageLabels } from "@/lib/supabase-queries";
 
 export default function MatchesPage() {
-  const { data: matches = [], isLoading } = useMatches();
+  const { data: allMatches = [], isLoading } = useMatches();
+
+  // Filter out knockout matches without assigned teams
+  const matches = allMatches.filter(m =>
+    m.stage === "group" || (m.homeTeam.id !== "tbd" && m.awayTeam.id !== "tbd")
+  );
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20 text-muted-foreground">Carregando...</div>;
