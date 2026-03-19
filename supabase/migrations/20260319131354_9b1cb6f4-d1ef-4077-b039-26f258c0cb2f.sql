@@ -1,0 +1,1 @@
+UPDATE matches SET home_team_id = NULL, away_team_id = NULL WHERE stage != 'group';
