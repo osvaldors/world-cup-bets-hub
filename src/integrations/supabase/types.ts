@@ -192,6 +192,77 @@ export type Database = {
         }
         Relationships: []
       }
+      special_bets: {
+        Row: {
+          champion_team_id: string | null
+          created_at: string
+          id: string
+          participant_id: string
+          top_scorer_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          created_at?: string
+          id?: string
+          participant_id: string
+          top_scorer_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          created_at?: string
+          id?: string
+          participant_id?: string
+          top_scorer_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_bets_champion_team_id_fkey"
+            columns: ["champion_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_bets_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: true
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_results: {
+        Row: {
+          champion_team_id: string | null
+          id: string
+          top_scorer_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          champion_team_id?: string | null
+          id?: string
+          top_scorer_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          champion_team_id?: string | null
+          id?: string
+          top_scorer_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_results_champion_team_id_fkey"
+            columns: ["champion_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           flag: string
