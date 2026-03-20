@@ -6,11 +6,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FlaskConical, RotateCcw, Check, X } from "lucide-react";
+import { FlaskConical, RotateCcw, Check, X, CalendarDays, LayoutGrid } from "lucide-react";
 import { stageLabels } from "@/lib/supabase-queries";
 import { motion } from "framer-motion";
 
+type ViewMode = "group" | "date";
+
 const knockoutStages = ["round-of-32", "round-of-16", "quarter-final", "semi-final", "third-place", "final"];
+
+function groupMatchesByDate(matches: Match[]): Record<string, Match[]> {
+  const sorted = [...matches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return sorted.reduce<Record<string, Match[]>>((acc, m) => {
+    const d = new Date(m.date);
+    const key = d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+    (acc[key] = acc[key] ?? []).push(m);
+    return acc;
+  }, {});
+}
 
 export default function SimMatchesPage() {
   const { data: matches = [], isLoading: lm } = useMatches();
