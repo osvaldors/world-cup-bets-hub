@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useMatches, useParticipants, useInvalidate } from "@/hooks/use-bolao-data";
-import { fetchBets, upsertBet } from "@/lib/supabase-queries";
+import { useState, useEffect } from "react";
+import { useMatches, useParticipants, useTeams, useInvalidate } from "@/hooks/use-bolao-data";
+import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults, isGroupStageOver } from "@/lib/supabase-queries";
 import { stageLabels } from "@/lib/supabase-queries";
 import { Bet, Match } from "@/types/bolao";
-import { calculateScore } from "@/lib/scoring";
+import { calculateScore, SCORING_RULES } from "@/lib/scoring";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy, CalendarDays, LayoutGrid } from "lucide-react";
+import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy, CalendarDays, LayoutGrid, Crown, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -65,6 +65,7 @@ function groupMatchesByGroup(matchList: Match[]): Record<string, Match[]> {
 export default function BetsPage() {
   const { data: matches = [] } = useMatches();
   const { data: participants = [] } = useParticipants();
+  const { data: teams = [] } = useTeams();
   const [selectedParticipant, setSelectedParticipant] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("date");
   const invalidate = useInvalidate();
@@ -75,12 +76,41 @@ export default function BetsPage() {
     enabled: !!selectedParticipant,
   });
 
+  const { data: specialBet, refetch: refetchSpecialBet } = useQuery({
+    queryKey: ["special-bet", selectedParticipant],
+    queryFn: () => (selectedParticipant ? fetchSpecialBetByParticipant(selectedParticipant) : Promise.resolve(null)),
+    enabled: !!selectedParticipant,
+  });
+
+  const { data: specialResults } = useQuery({
+    queryKey: ["special-results"],
+    queryFn: fetchSpecialResults,
+  });
+
+  const { data: groupStageFinished = false } = useQuery({
+    queryKey: ["group-stage-over"],
+    queryFn: isGroupStageOver,
+  });
+
   const [formState, setFormState] = useState<BetFormState>({});
+  const [championTeamId, setChampionTeamId] = useState<string>("");
+  const [topScorerName, setTopScorerName] = useState<string>("");
 
   // Set first participant when loaded
   if (participants.length > 0 && !selectedParticipant) {
     setSelectedParticipant(participants[0].id);
   }
+
+  // Sync special bet form when data loads
+  useEffect(() => {
+    if (specialBet) {
+      setChampionTeamId(specialBet.champion_team_id || "");
+      setTopScorerName(specialBet.top_scorer_name || "");
+    } else {
+      setChampionTeamId("");
+      setTopScorerName("");
+    }
+  }, [specialBet]);
 
   const handleParticipantChange = (participantId: string) => {
     setSelectedParticipant(participantId);
@@ -128,6 +158,30 @@ export default function BetsPage() {
     }
   };
 
+  const handleSaveSpecialBet = async () => {
+    if (!selectedParticipant) return;
+    if (groupStageFinished) {
+      toast.error("Prazo encerrado! A fase eliminatória já começou.");
+      return;
+    }
+    if (!championTeamId && !topScorerName) {
+      toast.error("Preencha pelo menos um palpite especial!");
+      return;
+    }
+    try {
+      await upsertSpecialBet(
+        selectedParticipant,
+        championTeamId || null,
+        topScorerName || null
+      );
+      toast.success("Palpites especiais salvos!");
+      refetchSpecialBet();
+      invalidate("participants-with-points");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const hasBet = (matchId: string) => bets.some((b) => b.matchId === matchId);
 
   const upcomingMatches = matches.filter((m) => !m.played);
@@ -139,6 +193,18 @@ export default function BetsPage() {
     const result = calculateScore(bet.homeScore, bet.awayScore, match.homeScore, match.awayScore);
     return sum + result.points;
   }, 0);
+
+  // Calculate special bet points
+  let specialPoints = 0;
+  if (specialBet && specialResults) {
+    if (specialResults.champion_team_id && specialBet.champion_team_id === specialResults.champion_team_id) {
+      specialPoints += SCORING_RULES.CHAMPION.points;
+    }
+    if (specialResults.top_scorer_name && specialBet.top_scorer_name &&
+        specialResults.top_scorer_name.toLowerCase().trim() === specialBet.top_scorer_name.toLowerCase().trim()) {
+      specialPoints += SCORING_RULES.TOP_SCORER.points;
+    }
+  }
 
   const currentParticipant = participants.find((p) => p.id === selectedParticipant);
 
@@ -185,6 +251,8 @@ export default function BetsPage() {
     ));
   };
 
+  const selectedTeam = teams.find(t => t.id === championTeamId);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -206,7 +274,7 @@ export default function BetsPage() {
           </Select>
           {currentParticipant && playedMatches.length > 0 && (
             <span className="text-sm text-success font-semibold flex items-center gap-1">
-              <Trophy className="h-3.5 w-3.5" /> {totalPointsFromBets} pts
+              <Trophy className="h-3.5 w-3.5" /> {totalPointsFromBets + specialPoints} pts
             </span>
           )}
           <div className="sm:ml-auto flex items-center gap-1 bg-muted rounded-md p-1">
@@ -234,6 +302,9 @@ export default function BetsPage() {
         <TabsList className="glass">
           <TabsTrigger value="upcoming">A Jogar ({upcomingMatches.length})</TabsTrigger>
           <TabsTrigger value="played">Encerrados ({playedMatches.length})</TabsTrigger>
+          <TabsTrigger value="special" className="gap-1.5">
+            <Crown className="h-3.5 w-3.5" /> Especiais
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-6 space-y-8">
@@ -243,10 +314,119 @@ export default function BetsPage() {
         <TabsContent value="played" className="mt-6 space-y-8">
           {renderMatchGrid(groupedPlayed, "played")}
         </TabsContent>
+
+        <TabsContent value="special" className="mt-6">
+          <div className="max-w-xl space-y-6">
+            <Card className={`glass p-6 transition-all ${groupStageFinished ? "opacity-70" : ""}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-heading text-lg font-semibold flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-warning" /> Palpites Especiais
+                </h3>
+                {groupStageFinished ? (
+                  <span className="text-xs text-destructive flex items-center gap-1">
+                    <Lock className="h-3.5 w-3.5" /> Prazo encerrado
+                  </span>
+                ) : (
+                  <span className="text-xs text-success flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" /> Aberto até início dos 16 avos
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    Seleção Campeã
+                    <span className="text-xs text-success font-bold ml-auto">+{SCORING_RULES.CHAMPION.points} pts</span>
+                  </label>
+                  <Select value={championTeamId} onValueChange={setChampionTeamId} disabled={groupStageFinished}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a seleção campeã">
+                        {selectedTeam ? (
+                          <span className="flex items-center gap-2">
+                            <span>{selectedTeam.flag}</span> {selectedTeam.name}
+                          </span>
+                        ) : undefined}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <span className="flex items-center gap-2">
+                            <span>{t.flag}</span> {t.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {specialBet?.champion_team_id && specialResults?.champion_team_id && (
+                    <div className={`text-xs p-2 rounded ${
+                      specialBet.champion_team_id === specialResults.champion_team_id
+                        ? "bg-success/10 text-success"
+                        : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {specialBet.champion_team_id === specialResults.champion_team_id
+                        ? `✅ Acertou! +${SCORING_RULES.CHAMPION.points} pts`
+                        : "❌ Errou o campeão"}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Star className="h-4 w-4 text-warning" />
+                    Artilheiro da Copa
+                    <span className="text-xs text-success font-bold ml-auto">+{SCORING_RULES.TOP_SCORER.points} pts</span>
+                  </label>
+                  <Input
+                    placeholder="Nome do jogador artilheiro"
+                    value={topScorerName}
+                    onChange={(e) => setTopScorerName(e.target.value)}
+                    disabled={groupStageFinished}
+                  />
+                  {specialBet?.top_scorer_name && specialResults?.top_scorer_name && (
+                    <div className={`text-xs p-2 rounded ${
+                      specialResults.top_scorer_name.toLowerCase().trim() === specialBet.top_scorer_name.toLowerCase().trim()
+                        ? "bg-success/10 text-success"
+                        : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {specialResults.top_scorer_name.toLowerCase().trim() === specialBet.top_scorer_name.toLowerCase().trim()
+                        ? `✅ Acertou! +${SCORING_RULES.TOP_SCORER.points} pts`
+                        : `❌ Errou o artilheiro (resultado: ${specialResults.top_scorer_name})`}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                {specialBet && (
+                  <span className="text-xs text-success flex items-center gap-1">
+                    <Check className="h-3.5 w-3.5" /> Palpite registrado
+                  </span>
+                )}
+                <Button onClick={handleSaveSpecialBet} disabled={groupStageFinished}>
+                  {specialBet ? "Atualizar" : "Salvar"} Palpites Especiais
+                </Button>
+              </div>
+            </Card>
+
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground">
+              <p><strong>ℹ️ Regras dos palpites especiais:</strong></p>
+              <ul className="mt-1.5 space-y-1 text-xs">
+                <li>• Cada acerto vale <strong>20 pontos</strong></li>
+                <li>• Prazo: até antes do início dos 16 avos de final</li>
+                <li>• <strong>Modo Liga:</strong> pontos somam para todos</li>
+                <li>• <strong>Modo Copa:</strong> pontos contam apenas para quem chegar à final</li>
+              </ul>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
 function BetCard({ match, open, saved, homeScore, awayScore, onScoreChange, onSave }: {
   match: Match; open: boolean; saved: boolean; homeScore: string; awayScore: string;
   onScoreChange: (field: "homeScore" | "awayScore", val: string) => void; onSave: () => void;

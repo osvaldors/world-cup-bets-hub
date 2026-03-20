@@ -8,6 +8,8 @@ export const SCORING_RULES = {
   DRAW_NO_EXACT: { points: 15, label: "Acertou Empate", color: "primary" },
   ONE_SCORE: { points: 3, label: "Acertou Gols de 1 Time", color: "muted" },
   MISS: { points: 0, label: "Errou", color: "destructive" },
+  CHAMPION: { points: 20, label: "Acertou Campeão", color: "success" },
+  TOP_SCORER: { points: 20, label: "Acertou Artilheiro", color: "success" },
 };
 
 export function calculateScore(

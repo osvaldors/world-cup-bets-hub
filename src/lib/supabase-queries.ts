@@ -256,6 +256,104 @@ export async function upsertCupBracketMatch(
 }
 
 // ========================
+// SPECIAL BETS (Champion + Top Scorer)
+// ========================
+export interface SpecialBetRow {
+  id: string;
+  participant_id: string;
+  champion_team_id: string | null;
+  top_scorer_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpecialResultRow {
+  id: string;
+  champion_team_id: string | null;
+  top_scorer_name: string | null;
+  updated_at: string;
+}
+
+export async function fetchSpecialBets(): Promise<SpecialBetRow[]> {
+  const { data, error } = await supabase.from("special_bets").select("*");
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchSpecialBetByParticipant(participantId: string): Promise<SpecialBetRow | null> {
+  const { data, error } = await supabase
+    .from("special_bets")
+    .select("*")
+    .eq("participant_id", participantId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertSpecialBet(
+  participantId: string,
+  championTeamId: string | null,
+  topScorerName: string | null
+) {
+  const { error } = await supabase
+    .from("special_bets")
+    .upsert(
+      {
+        participant_id: participantId,
+        champion_team_id: championTeamId,
+        top_scorer_name: topScorerName,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "participant_id" }
+    );
+  if (error) throw error;
+}
+
+export async function fetchSpecialResults(): Promise<SpecialResultRow | null> {
+  const { data, error } = await supabase
+    .from("special_results")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertSpecialResults(
+  championTeamId: string | null,
+  topScorerName: string | null
+) {
+  const existing = await fetchSpecialResults();
+  if (existing) {
+    const { error } = await supabase
+      .from("special_results")
+      .update({ champion_team_id: championTeamId, top_scorer_name: topScorerName, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("special_results")
+      .insert({ champion_team_id: championTeamId, top_scorer_name: topScorerName });
+    if (error) throw error;
+  }
+}
+
+// ========================
+// Check if group stage is over (any round-of-32 match has teams assigned)
+// ========================
+export async function isGroupStageOver(): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id, home_team_id, away_team_id")
+    .neq("stage", "group")
+    .not("home_team_id", "is", null)
+    .not("away_team_id", "is", null)
+    .limit(1);
+  if (error) throw error;
+  return (data || []).length > 0;
+}
+
+// ========================
 // COMPUTED: Participant points from bets
 // ========================
 export async function computeParticipantPoints(

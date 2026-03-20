@@ -6,8 +6,10 @@ import {
   fetchBets,
   fetchCupBracketMatches,
   computeParticipantPoints,
+  fetchSpecialBets,
+  fetchSpecialResults,
 } from "@/lib/supabase-queries";
-import { calculateScore } from "@/lib/scoring";
+import { calculateScore, SCORING_RULES } from "@/lib/scoring";
 import { GroupStanding, Participant, Match, Bet } from "@/types/bolao";
 
 export function computeCupGroupStandings(
@@ -172,6 +174,12 @@ export function useParticipantsWithPoints() {
       const bets = await fetchBets();
       const pointsMap = await computeParticipantPoints(matches, bets);
 
+      // Fetch special bets and results
+      const [specialBets, specialResults] = await Promise.all([
+        fetchSpecialBets(),
+        fetchSpecialResults(),
+      ]);
+
       // Calcular estatísticas detalhadas para cada participante
       const participantsWithStats = participants.map((p) => {
         const stats = {
@@ -210,11 +218,27 @@ export function useParticipantsWithPoints() {
           else stats.incorrect++;
         });
 
+        // Add special bet points (league mode: counts for everyone)
+        let specialPoints = 0;
+        const mySpecialBet = specialBets.find(sb => sb.participant_id === p.id);
+        if (mySpecialBet && specialResults) {
+          if (specialResults.champion_team_id && mySpecialBet.champion_team_id === specialResults.champion_team_id) {
+            specialPoints += SCORING_RULES.CHAMPION.points;
+          }
+          if (specialResults.top_scorer_name && mySpecialBet.top_scorer_name &&
+              specialResults.top_scorer_name.toLowerCase().trim() === mySpecialBet.top_scorer_name.toLowerCase().trim()) {
+            specialPoints += SCORING_RULES.TOP_SCORER.points;
+          }
+        }
+
+        const basePoints = pointsMap.get(p.id) || 0;
+
         return {
           ...p,
-          totalPoints: pointsMap.get(p.id) || 0,
-          leaguePoints: pointsMap.get(p.id) || 0,
+          totalPoints: basePoints + specialPoints,
+          leaguePoints: basePoints + specialPoints,
           stats,
+          specialPoints,
         };
       });
 
