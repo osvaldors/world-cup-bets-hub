@@ -6,11 +6,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FlaskConical, RotateCcw, Check, X } from "lucide-react";
+import { FlaskConical, RotateCcw, Check, X, CalendarDays, LayoutGrid } from "lucide-react";
 import { stageLabels } from "@/lib/supabase-queries";
 import { motion } from "framer-motion";
 
+type ViewMode = "group" | "date";
+
 const knockoutStages = ["round-of-32", "round-of-16", "quarter-final", "semi-final", "third-place", "final"];
+
+function groupMatchesByDate(matches: Match[]): Record<string, Match[]> {
+  const sorted = [...matches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return sorted.reduce<Record<string, Match[]>>((acc, m) => {
+    const d = new Date(m.date);
+    const key = d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+    (acc[key] = acc[key] ?? []).push(m);
+    return acc;
+  }, {});
+}
 
 export default function SimMatchesPage() {
   const { data: matches = [], isLoading: lm } = useMatches();
@@ -21,6 +33,7 @@ export default function SimMatchesPage() {
   // Local editing state: matchId -> {home, away}
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ home: string; away: string }>({ home: "", away: "" });
+  const [viewMode, setViewMode] = useState<ViewMode>("group");
 
   useEffect(() => {
     if (!lm && !lb && !lp) {
@@ -138,6 +151,7 @@ export default function SimMatchesPage() {
   }, {});
 
   const simCount = Object.keys(simMatches).length;
+  const dateGrouped = groupMatchesByDate(validMatches);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -151,34 +165,65 @@ export default function SimMatchesPage() {
             Simule resultados sem alterar os dados reais. {simCount > 0 && <span className="text-amber-400 font-medium">{simCount} jogo(s) simulado(s)</span>}
           </p>
         </div>
-        {simCount > 0 && (
-          <Button variant="outline" onClick={resetAll} className="text-amber-400 border-amber-400/40">
-            <RotateCcw className="h-4 w-4 mr-2" /> Limpar Simulação
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border bg-muted p-0.5">
+            <Button
+              size="sm"
+              variant={viewMode === "group" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs gap-1.5"
+              onClick={() => setViewMode("group")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" /> Grupos
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "date" ? "default" : "ghost"}
+              className="h-7 px-2.5 text-xs gap-1.5"
+              onClick={() => setViewMode("date")}
+            >
+              <CalendarDays className="h-3.5 w-3.5" /> Por Data
+            </Button>
+          </div>
+          {simCount > 0 && (
+            <Button variant="outline" onClick={resetAll} className="text-amber-400 border-amber-400/40">
+              <RotateCcw className="h-4 w-4 mr-2" /> Limpar Simulação
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Tabs defaultValue="groups" className="w-full">
-        <TabsList className="glass flex-wrap">
-          <TabsTrigger value="groups">Fase de Grupos</TabsTrigger>
-          {knockoutStages.map((s) => groupedByStage[s] ? <TabsTrigger key={s} value={s}>{stageLabels[s]}</TabsTrigger> : null)}
-        </TabsList>
-
-        <TabsContent value="groups" className="mt-6 space-y-6">
-          {Object.entries(groupedByGroup).sort(([a], [b]) => a.localeCompare(b)).map(([group, gms]) => (
-            <div key={group}>
-              <h3 className="font-heading font-semibold text-xs text-muted-foreground uppercase tracking-widest mb-3">Grupo {group}</h3>
-              <div className="space-y-2">{gms.map(renderRow)}</div>
+      {viewMode === "date" ? (
+        <div className="space-y-6">
+          {Object.entries(dateGrouped).map(([dateLabel, dms]) => (
+            <div key={dateLabel}>
+              <h3 className="font-heading font-semibold text-xs text-muted-foreground uppercase tracking-widest mb-3">{dateLabel}</h3>
+              <div className="space-y-2">{dms.map(renderRow)}</div>
             </div>
           ))}
-        </TabsContent>
+        </div>
+      ) : (
+        <Tabs defaultValue="groups" className="w-full">
+          <TabsList className="glass flex-wrap">
+            <TabsTrigger value="groups">Fase de Grupos</TabsTrigger>
+            {knockoutStages.map((s) => groupedByStage[s] ? <TabsTrigger key={s} value={s}>{stageLabels[s]}</TabsTrigger> : null)}
+          </TabsList>
 
-        {knockoutStages.map((stage) => groupedByStage[stage] ? (
-          <TabsContent key={stage} value={stage} className="mt-6">
-            <div className="space-y-2">{groupedByStage[stage].map(renderRow)}</div>
+          <TabsContent value="groups" className="mt-6 space-y-6">
+            {Object.entries(groupedByGroup).sort(([a], [b]) => a.localeCompare(b)).map(([group, gms]) => (
+              <div key={group}>
+                <h3 className="font-heading font-semibold text-xs text-muted-foreground uppercase tracking-widest mb-3">Grupo {group}</h3>
+                <div className="space-y-2">{gms.map(renderRow)}</div>
+              </div>
+            ))}
           </TabsContent>
-        ) : null)}
-      </Tabs>
+
+          {knockoutStages.map((stage) => groupedByStage[stage] ? (
+            <TabsContent key={stage} value={stage} className="mt-6">
+              <div className="space-y-2">{groupedByStage[stage].map(renderRow)}</div>
+            </TabsContent>
+          ) : null)}
+        </Tabs>
+      )}
     </div>
   );
 }
