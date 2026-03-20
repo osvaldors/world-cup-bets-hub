@@ -33,6 +33,7 @@ export default function SimMatchesPage() {
   // Local editing state: matchId -> {home, away}
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ home: string; away: string }>({ home: "", away: "" });
+  const [viewMode, setViewMode] = useState<ViewMode>("group");
 
   useEffect(() => {
     if (!lm && !lb && !lp) {
