@@ -6,8 +6,10 @@ import {
   fetchBets,
   fetchCupBracketMatches,
   computeParticipantPoints,
+  fetchSpecialBets,
+  fetchSpecialResults,
 } from "@/lib/supabase-queries";
-import { calculateScore } from "@/lib/scoring";
+import { calculateScore, SCORING_RULES } from "@/lib/scoring";
 import { GroupStanding, Participant, Match, Bet } from "@/types/bolao";
 
 export function computeCupGroupStandings(
