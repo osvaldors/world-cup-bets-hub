@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMatches, useParticipants, useTeams, useInvalidate } from "@/hooks/use-bolao-data";
-import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults, isGroupStageOver } from "@/lib/supabase-queries";
+import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults } from "@/lib/supabase-queries";
 import { stageLabels } from "@/lib/supabase-queries";
 import { Bet, Match } from "@/types/bolao";
 import { calculateScore, SCORING_RULES } from "@/lib/scoring";
@@ -87,10 +87,9 @@ export default function BetsPage() {
     queryFn: fetchSpecialResults,
   });
 
-  const { data: groupStageFinished = false } = useQuery({
-    queryKey: ["group-stage-over"],
-    queryFn: isGroupStageOver,
-  });
+  // Bloqueio fixo: 28/06/2026 às 16:00 BRT (19:00 UTC)
+  const SPECIAL_BET_DEADLINE = new Date("2026-06-28T19:00:00Z");
+  const groupStageFinished = new Date() >= SPECIAL_BET_DEADLINE;
 
   const [formState, setFormState] = useState<BetFormState>({});
   const [championTeamId, setChampionTeamId] = useState<string>("");
