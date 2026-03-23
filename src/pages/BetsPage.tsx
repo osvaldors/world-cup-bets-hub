@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMatches, useParticipants, useTeams, useInvalidate } from "@/hooks/use-bolao-data";
-import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults, isGroupStageOver } from "@/lib/supabase-queries";
+import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults } from "@/lib/supabase-queries";
 import { stageLabels } from "@/lib/supabase-queries";
 import { Bet, Match } from "@/types/bolao";
 import { calculateScore, SCORING_RULES } from "@/lib/scoring";
