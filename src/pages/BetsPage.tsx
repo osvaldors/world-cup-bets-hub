@@ -87,10 +87,9 @@ export default function BetsPage() {
     queryFn: fetchSpecialResults,
   });
 
-  const { data: groupStageFinished = false } = useQuery({
-    queryKey: ["group-stage-over"],
-    queryFn: isGroupStageOver,
-  });
+  // Bloqueio fixo: 28/06/2026 às 16:00 BRT (19:00 UTC)
+  const SPECIAL_BET_DEADLINE = new Date("2026-06-28T19:00:00Z");
+  const groupStageFinished = new Date() >= SPECIAL_BET_DEADLINE;
 
   const [formState, setFormState] = useState<BetFormState>({});
   const [championTeamId, setChampionTeamId] = useState<string>("");

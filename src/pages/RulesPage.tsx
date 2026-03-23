@@ -67,8 +67,8 @@ export default function RulesPage() {
         <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm text-warning">
           <p className="font-medium">⚠️ Prazo para palpites especiais</p>
           <p className="text-muted-foreground mt-1">
-            Os palpites de Campeão e Artilheiro devem ser registrados antes do início da fase eliminatória (16 avos de final).
-            Após esse prazo, os palpites ficam bloqueados.
+            Os palpites de Campeão e Artilheiro devem ser registrados até o dia <strong>28/06/2026 às 16h (horário de Brasília)</strong>, antes do início do primeiro jogo dos 16 avos de final.
+            Após esse prazo, os palpites ficam bloqueados e não podem mais ser alterados.
           </p>
         </div>
       </Card>
