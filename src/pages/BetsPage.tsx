@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMatches, useParticipants, useTeams, useInvalidate } from "@/hooks/use-bolao-data";
 import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults } from "@/lib/supabase-queries";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { stageLabels } from "@/lib/supabase-queries";
 import { Bet, Match } from "@/types/bolao";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy, CalendarDays, LayoutGrid, Crown, Star } from "lucide-react";
+import { ClipboardEdit, Clock, Lock, Check, AlertTriangle, Trophy, CalendarDays, LayoutGrid, Crown, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -64,7 +65,7 @@ function groupMatchesByGroup(matchList: Match[]): Record<string, Match[]> {
 }
 
 export default function BetsPage() {
-  const { user, participantId } = useAuth();
+  const { user, participantId, participant: authParticipant } = useAuth();
   const { data: matches = [] } = useMatches();
   const { data: participants = [] } = useParticipants();
   const { data: teams = [] } = useTeams();
@@ -127,7 +128,24 @@ export default function BetsPage() {
     }));
   };
 
+  const [savingMatchId, setSavingMatchId] = useState<string | null>(null);
+
   const handleSaveBet = async (matchId: string) => {
+    let currentParticipantId = participantId;
+    console.log("handleSaveBet - Start", { participantId, userId: user?.id });
+
+    if (!currentParticipantId && user) {
+      // Try to fetch manually as fallback
+      const { data, error } = await supabase.from('profiles').select('participant_id').eq('user_id', user.id).maybeSingle();
+      console.log("handleSaveBet - Manual Fetch Result", { data, error });
+      if (data?.participant_id) currentParticipantId = data.participant_id;
+    }
+
+    if (!currentParticipantId) {
+      toast.error(`Erro: Seu perfil não possui um participante vinculado. (User: ${user?.id})`);
+      return;
+    }
+
     const match = matches.find((m) => m.id === matchId);
     if (!match || !isBetOpen(match)) {
       toast.error("Prazo encerrado para este jogo!");
@@ -138,14 +156,17 @@ export default function BetsPage() {
       toast.error("Preencha ambos os placares!");
       return;
     }
+    
+    setSavingMatchId(matchId);
     try {
-      if (!participantId) throw new Error("Aguardando dados do participante...");
-      await upsertBet(matchId, participantId, parseInt(form.homeScore), parseInt(form.awayScore));
-      toast.success("Palpite salvo!");
+      await upsertBet(matchId, currentParticipantId, parseInt(form.homeScore), parseInt(form.awayScore));
+      toast.success("Palpite para " + match.homeTeam.name + " x " + match.awayTeam.name + " salvo com sucesso!");
       refetchBets();
       invalidate("participants-with-points");
     } catch (err: any) {
       toast.error(err.message);
+    } finally {
+      setSavingMatchId(null);
     }
   };
 
@@ -197,7 +218,8 @@ export default function BetsPage() {
     }
   }
 
-  const currentParticipant = participants.find((p) => p.id === participantId);
+  const currentParticipant = authParticipant;
+  const participantName = currentParticipant?.name || user?.user_metadata?.display_name || user?.email?.split('@')[0] || "Aguardando...";
 
   const groupedUpcoming = viewMode === "date" ? groupMatchesByDate(upcomingMatches) : groupMatchesByGroup(upcomingMatches);
   const groupedPlayed = viewMode === "date" ? groupMatchesByDate(playedMatches) : groupMatchesByGroup(playedMatches);
@@ -225,6 +247,7 @@ export default function BetsPage() {
                     awayScore={formState[match.id]?.awayScore ?? ""}
                     onScoreChange={(field, val) => handleScoreChange(match.id, field, val)}
                     onSave={() => handleSaveBet(match.id)}
+                    isSaving={savingMatchId === match.id}
                   />
                 </motion.div>
               );
@@ -244,6 +267,10 @@ export default function BetsPage() {
 
   const selectedTeam = teams.find(t => t.id === championTeamId);
 
+  const matchIdsWithBets = new Set(bets.map((b) => b.matchId));
+  const bettedUpcomingMatches = upcomingMatches.filter((m) => matchIdsWithBets.has(m.id));
+  const groupedBetted = viewMode === "date" ? groupMatchesByDate(bettedUpcomingMatches) : groupMatchesByGroup(bettedUpcomingMatches);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -258,7 +285,7 @@ export default function BetsPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-muted-foreground shrink-0">Participante:</label>
-            <span className="text-sm font-bold text-primary">{currentParticipant?.name || "Carregando..."}</span>
+            <span className="text-sm font-bold text-primary">{participantName}</span>
           </div>
           {currentParticipant && playedMatches.length > 0 && (
             <span className="text-sm text-success font-semibold flex items-center gap-1">
@@ -289,6 +316,9 @@ export default function BetsPage() {
       <Tabs defaultValue="upcoming" className="w-full">
         <TabsList className="glass">
           <TabsTrigger value="upcoming">A Jogar ({upcomingMatches.length})</TabsTrigger>
+          <TabsTrigger value="betted" className="gap-1.5">
+            <Check className="h-3.5 w-3.5" /> Palpitados ({bettedUpcomingMatches.length})
+          </TabsTrigger>
           <TabsTrigger value="played">Encerrados ({playedMatches.length})</TabsTrigger>
           <TabsTrigger value="special" className="gap-1.5">
             <Crown className="h-3.5 w-3.5" /> Especiais
@@ -297,6 +327,10 @@ export default function BetsPage() {
 
         <TabsContent value="upcoming" className="mt-6 space-y-8">
           {renderMatchGrid(groupedUpcoming, "upcoming")}
+        </TabsContent>
+
+        <TabsContent value="betted" className="mt-6 space-y-8">
+          {renderMatchGrid(groupedBetted, "upcoming")}
         </TabsContent>
 
         <TabsContent value="played" className="mt-6 space-y-8">
@@ -415,12 +449,13 @@ export default function BetsPage() {
   );
 }
 
-function BetCard({ match, open, saved, homeScore, awayScore, onScoreChange, onSave }: {
+function BetCard({ match, open, saved, homeScore, awayScore, onScoreChange, onSave, isSaving }: {
   match: Match; open: boolean; saved: boolean; homeScore: string; awayScore: string;
   onScoreChange: (field: "homeScore" | "awayScore", val: string) => void; onSave: () => void;
+  isSaving?: boolean;
 }) {
   return (
-    <Card className={`glass p-4 transition-all ${open ? "hover:border-primary/30" : "opacity-70"}`}>
+    <Card className={`glass p-4 transition-all ${open ? "hover:border-primary/30" : "opacity-70"} ${isSaving ? "ring-2 ring-primary/20" : ""}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{new Date(match.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
@@ -451,8 +486,14 @@ function BetCard({ match, open, saved, homeScore, awayScore, onScoreChange, onSa
         </div>
       </div>
       <div className="mt-3 flex items-center justify-end gap-2">
-        {saved && <span className="text-xs text-success flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Salvo</span>}
-        <Button size="sm" onClick={onSave} disabled={!open}>{saved ? "Atualizar" : "Salvar"} Palpite</Button>
+        {saved && !isSaving && <span className="text-xs text-success flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Salvo</span>}
+        <Button size="sm" onClick={onSave} disabled={!open || isSaving}>
+          {isSaving ? (
+            <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Salvando...</>
+          ) : (
+            <>{saved ? "Atualizar" : "Salvar"} Palpite</>
+          )}
+        </Button>
       </div>
     </Card>
   );

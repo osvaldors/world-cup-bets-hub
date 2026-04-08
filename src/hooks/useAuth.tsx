@@ -46,16 +46,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchParticipantId = async (userId: string) => {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*, participants(*)")
-      .eq("user_id", userId)
-      .maybeSingle();
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*, participants(*)")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (profileData) {
-      setProfile(profileData);
-      setParticipantId(profileData.participant_id);
-      setParticipant(profileData.participants);
+      if (error) {
+        console.error("Error fetching participant id:", error);
+      }
+
+      if (profileData) {
+        setProfile(profileData);
+        setParticipantId(profileData.participant_id);
+        setParticipant(profileData.participants);
+      } else {
+        console.warn("No profile found for user_id:", userId);
+      }
+    } catch (e) {
+      console.error("Exception in fetchParticipantId:", e);
     }
   };
 

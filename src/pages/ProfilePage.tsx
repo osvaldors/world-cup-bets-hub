@@ -9,10 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Camera, Loader2, Lock, User as UserIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useInvalidate } from "@/hooks/use-bolao-data";
 
 export default function ProfilePage() {
   const { user, profile, participant, updateProfile } = useAuth();
   const { toast } = useToast();
+  const invalidate = useInvalidate();
   
   const [displayName, setDisplayName] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -38,6 +40,7 @@ export default function ProfilePage() {
     if (error) {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
     } else {
+      invalidate("participants", "participants-with-points");
       toast({ title: "Sucesso!", description: "Nome atualizado com sucesso." });
     }
   };
@@ -100,6 +103,7 @@ export default function ProfilePage() {
       
       if (updateError) throw updateError;
 
+      invalidate("participants", "participants-with-points");
       toast({ title: "Sucesso!", description: "Avatar atualizado com sucesso." });
     } catch (error: any) {
       toast({ 

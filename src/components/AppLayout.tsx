@@ -52,14 +52,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/perfil" className="cursor-pointer flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/perfil" className="cursor-pointer flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Editar</span>
+                    <span>Editar Perfil</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
