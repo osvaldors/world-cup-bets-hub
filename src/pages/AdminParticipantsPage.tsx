@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Users, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AdminParticipantsPage() {
@@ -111,9 +111,12 @@ export default function AdminParticipantsPage() {
             <Card key={p.id} className={`glass p-4 transition-opacity ${!p.active ? "opacity-60 bg-muted/20" : ""}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${!p.active ? "bg-muted text-muted-foreground" : "bg-primary/20 text-primary"}`}>
-                    {p.avatar || p.name.substring(0, 2).toUpperCase()}
-                  </div>
+                  <Avatar className={`h-10 w-10 border shadow-sm ${!p.active ? "opacity-50" : ""}`}>
+                    <AvatarImage src={p.avatar} />
+                    <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                      {p.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     {editing === p.id ? (
                       <div className="space-y-2">

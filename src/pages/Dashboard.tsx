@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { MatchCard } from "@/components/MatchCard";
 import { motion } from "framer-motion";
 import { useMatches, useParticipantsWithPoints, useCupGroupStandings } from "@/hooks/use-bolao-data";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Dashboard() {
   const { data: matches = [], isLoading: loadingMatches } = useMatches();
@@ -123,12 +124,18 @@ export default function Dashboard() {
           <div className="space-y-3">
             {topParticipants.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
                   i === 0 ? "bg-primary text-primary-foreground" :
                   i === 1 ? "bg-primary/60 text-primary-foreground" :
                   i === 2 ? "bg-primary/30 text-foreground" :
                   "bg-muted text-muted-foreground"
                 }`}>{i + 1}</span>
+                <Avatar className="h-7 w-7 border border-border shrink-0">
+                  <AvatarImage src={p.avatar} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                    {p.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.name}</p>
                 </div>

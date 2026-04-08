@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useParticipantsWithPoints } from "@/hooks/use-bolao-data";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function LeaguePage() {
   const { data: participants = [], isLoading } = useParticipantsWithPoints();
@@ -79,7 +80,12 @@ export default function LeaguePage() {
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{p.avatar}</span>
+                      <Avatar className="h-8 w-8 border border-border">
+                        <AvatarImage src={p.avatar} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                          {p.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="font-medium">{p.name}</span>
                     </div>
                   </td>
