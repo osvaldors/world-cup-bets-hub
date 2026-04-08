@@ -26,7 +26,7 @@ const simulatorNav = {
   icon: <FlaskConical className="h-4 w-4" />,
   children: [
     {
-      label: "Simular Jogos",
+      label: "Jogos",
       path: "/simulador/jogos",
       icon: <Calendar className="h-4 w-4" />,
     },

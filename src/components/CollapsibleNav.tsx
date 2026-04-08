@@ -17,7 +17,11 @@ interface CollapsibleNavProps {
 
 export function CollapsibleNav({ item, level = 0 }: CollapsibleNavProps) {
     const location = useLocation();
-    const [isOpen, setIsOpen] = useState(true);
+    const hasActiveChild = item.children?.some(child =>
+        location.pathname === child.path ||
+        child.children?.some(subChild => location.pathname === subChild.path)
+    );
+    const [isOpen, setIsOpen] = useState(hasActiveChild ?? false);
 
     const hasChildren = item.children && item.children.length > 0;
     const isActive = item.path ? location.pathname === item.path : false;
