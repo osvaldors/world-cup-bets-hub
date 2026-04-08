@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import LeaguePage from "./pages/LeaguePage";
 import CupPage from "./pages/CupPage";
@@ -33,31 +36,39 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SimulatorProvider>
-            <AppLayout>
+          <AuthProvider>
+            <SimulatorProvider>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/liga" element={<LeaguePage />} />
-                <Route path="/copa" element={<CupPage />} />
-                <Route path="/jogos" element={<MatchesPage />} />
-                <Route path="/palpites" element={<BetsPage />} />
-                <Route path="/regras" element={<RulesPage />} />
-                <Route path="/premiacao" element={<PrizesPage />} />
-                
-                {/* Simulador Routes */}
-                <Route path="/simulador/jogos" element={<SimMatchesPage />} />
-                <Route path="/simulador/copa" element={<SimCupStandingsPage />} />
-                <Route path="/simulador/chaveamento" element={<SimBracketPage />} />
-                <Route path="/simulador/liga" element={<SimLeaguePage />} />
-                <Route path="/simulador/palpites" element={<SimBetsPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="*" element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/liga" element={<LeaguePage />} />
+                        <Route path="/copa" element={<CupPage />} />
+                        <Route path="/jogos" element={<MatchesPage />} />
+                        <Route path="/palpites" element={<BetsPage />} />
+                        <Route path="/regras" element={<RulesPage />} />
+                        <Route path="/premiacao" element={<PrizesPage />} />
 
-                <Route path="/admin/jogos" element={<AdminMatchesPage />} />
-                <Route path="/admin/participantes" element={<AdminParticipantsPage />} />
-                <Route path="/admin/config" element={<AdminConfigPage />} />
-                <Route path="*" element={<NotFound />} />
+                        <Route path="/simulador/jogos" element={<SimMatchesPage />} />
+                        <Route path="/simulador/copa" element={<SimCupStandingsPage />} />
+                        <Route path="/simulador/chaveamento" element={<SimBracketPage />} />
+                        <Route path="/simulador/liga" element={<SimLeaguePage />} />
+                        <Route path="/simulador/palpites" element={<SimBetsPage />} />
+
+                        <Route path="/admin/jogos" element={<ProtectedRoute requiredRole="admin"><AdminMatchesPage /></ProtectedRoute>} />
+                        <Route path="/admin/participantes" element={<ProtectedRoute requiredRole="admin"><AdminParticipantsPage /></ProtectedRoute>} />
+                        <Route path="/admin/config" element={<ProtectedRoute requiredRole="admin"><AdminConfigPage /></ProtectedRoute>} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
               </Routes>
-            </AppLayout>
-          </SimulatorProvider>
+            </SimulatorProvider>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
