@@ -18,6 +18,7 @@ import PrizesPage from "./pages/PrizesPage";
 import AdminMatchesPage from "./pages/AdminMatchesPage";
 import AdminParticipantsPage from "./pages/AdminParticipantsPage";
 import AdminConfigPage from "./pages/AdminConfigPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 import { SimulatorProvider } from "./contexts/SimulatorContext";
@@ -57,6 +58,7 @@ const App = () => (
                         <Route path="/simulador/chaveamento" element={<SimBracketPage />} />
                         <Route path="/simulador/liga" element={<SimLeaguePage />} />
                         <Route path="/simulador/palpites" element={<SimBetsPage />} />
+                        <Route path="/perfil" element={<ProfilePage />} />
 
                         <Route path="/admin/jogos" element={<ProtectedRoute requiredRole="admin"><AdminMatchesPage /></ProtectedRoute>} />
                         <Route path="/admin/participantes" element={<ProtectedRoute requiredRole="admin"><AdminParticipantsPage /></ProtectedRoute>} />

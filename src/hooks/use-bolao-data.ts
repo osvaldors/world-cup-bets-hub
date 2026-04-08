@@ -18,7 +18,7 @@ export function computeCupGroupStandings(
   bets: Bet[]
 ): Record<string, GroupStanding[]> {
   const cupGroups: Record<string, Participant[]> = {};
-  participants.forEach((p) => {
+  participants.filter(p => p.active).forEach((p) => {
     if (p.cupGroup) {
       if (!cupGroups[p.cupGroup]) cupGroups[p.cupGroup] = [];
       cupGroups[p.cupGroup].push(p);
@@ -180,8 +180,10 @@ export function useParticipantsWithPoints() {
         fetchSpecialResults(),
       ]);
 
-      // Calcular estatísticas detalhadas para cada participante
-      const participantsWithStats = participants.map((p) => {
+      // Calcular estatísticas detalhadas para cada participante (filtrar inativos)
+      const participantsWithStats = participants
+        .filter((p) => p.active)
+        .map((p) => {
         const stats = {
           exactScore: 0,
           winnerAndBalance: 0,

@@ -10,9 +10,12 @@ interface AuthContextType {
   isParticipant: boolean;
   userRole: string | null;
   participantId: string | null;
+  profile: any | null;
+  participant: any | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  updateProfile: (data: { display_name?: string, avatar_url?: string }) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isParticipant, setIsParticipant] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [participantId, setParticipantId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
+  const [participant, setParticipant] = useState<any | null>(null);
 
   const fetchRole = async (userId: string) => {
     const { data } = await supabase
@@ -41,13 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchParticipantId = async (userId: string) => {
-    const { data } = await supabase
+    const { data: profileData } = await supabase
       .from("profiles")
-      .select("participant_id")
+      .select("*, participants(*)")
       .eq("user_id", userId)
       .maybeSingle();
 
-    setParticipantId(data?.participant_id || null);
+    if (profileData) {
+      setProfile(profileData);
+      setParticipantId(profileData.participant_id);
+      setParticipant(profileData.participants);
+    }
   };
 
   useEffect(() => {
@@ -66,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsParticipant(false);
           setUserRole(null);
           setParticipantId(null);
+          setProfile(null);
+          setParticipant(null);
         }
         setLoading(false);
       }
@@ -105,10 +116,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const updateProfile = async (data: { display_name?: string, avatar_url?: string }) => {
+    if (!user) return { error: new Error("User not logged in") };
+
+    try {
+      if (data.display_name) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ display_name: data.display_name })
+          .eq("user_id", user.id);
+        
+        if (profileError) throw profileError;
+
+        if (participantId) {
+          const { error: participantError } = await supabase
+            .from("participants")
+            .update({ name: data.display_name })
+            .eq("id", participantId);
+          
+          if (participantError) throw participantError;
+        }
+      }
+
+      if (data.avatar_url && participantId) {
+        const { error: participantError } = await supabase
+          .from("participants")
+          .update({ avatar: data.avatar_url })
+          .eq("id", participantId);
+        
+        if (participantError) throw participantError;
+      }
+
+      await fetchParticipantId(user.id);
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
-      user, session, loading, isAdmin, isParticipant, userRole, participantId,
-      signIn, signUp, signOut,
+      user, session, loading, isAdmin, isParticipant, userRole, participantId, profile, participant,
+      signIn, signUp, signOut, updateProfile,
     }}>
       {children}
     </AuthContext.Provider>

@@ -35,6 +35,7 @@ export interface Participant {
   leaguePoints: number;
   cupGroup?: string;
   cupEliminated: boolean;
+  active: boolean;
 }
 
 export interface GroupStanding {

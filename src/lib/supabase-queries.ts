@@ -112,6 +112,7 @@ interface ParticipantRow {
   avatar: string;
   cup_group: string | null;
   cup_eliminated: boolean;
+  active: boolean;
 }
 
 export async function fetchParticipants(): Promise<Participant[]> {
@@ -128,6 +129,7 @@ export async function fetchParticipants(): Promise<Participant[]> {
     leaguePoints: 0,
     cupGroup: p.cup_group ?? undefined,
     cupEliminated: p.cup_eliminated,
+    active: p.active,
   }));
 }
 
@@ -147,14 +149,13 @@ export async function addParticipant(name: string, cupGroup?: string) {
   return data;
 }
 
-export async function updateParticipant(id: string, updates: { name?: string; cup_group?: string; cup_eliminated?: boolean }) {
+export async function updateParticipant(id: string, updates: { name?: string; avatar?: string; cup_group?: string; cup_eliminated?: boolean; active?: boolean }) {
   const payload: Record<string, unknown> = {};
-  if (updates.name !== undefined) {
-    payload.name = updates.name;
-    payload.avatar = updates.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  }
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.avatar !== undefined) payload.avatar = updates.avatar;
   if (updates.cup_group !== undefined) payload.cup_group = updates.cup_group;
   if (updates.cup_eliminated !== undefined) payload.cup_eliminated = updates.cup_eliminated;
+  if (updates.active !== undefined) payload.active = updates.active;
 
   const { error } = await supabase
     .from("participants")

@@ -7,10 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Users, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 export default function AdminParticipantsPage() {
   const { data: participants = [], isLoading } = useParticipants();
   const [editing, setEditing] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
+  const [newGroup, setNewGroup] = useState("");
+  const [newActive, setNewActive] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [addName, setAddName] = useState("");
   const [addGroup, setAddGroup] = useState("");
@@ -23,10 +27,23 @@ export default function AdminParticipantsPage() {
 
   const handleSave = async (id: string) => {
     try {
-      await updateParticipant(id, { name: newName });
+      await updateParticipant(id, { 
+        name: newName, 
+        cup_group: newGroup || undefined,
+        active: newActive
+      });
       toast({ title: "Participante atualizado!" });
       invalidate("participants", "participants-with-points");
       setEditing(null);
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentActive: boolean) => {
+    try {
+      await updateParticipant(id, { active: !currentActive });
+      invalidate("participants", "participants-with-points");
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
@@ -91,17 +108,37 @@ export default function AdminParticipantsPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {participants.map((p) => (
-            <Card key={p.id} className="glass p-4">
+            <Card key={p.id} className={`glass p-4 transition-opacity ${!p.active ? "opacity-60 bg-muted/20" : ""}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-sm font-bold text-primary">{p.avatar}</div>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${!p.active ? "bg-muted text-muted-foreground" : "bg-primary/20 text-primary"}`}>
+                    {p.avatar || p.name.substring(0, 2).toUpperCase()}
+                  </div>
                   <div>
                     {editing === p.id ? (
-                      <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="h-7 text-sm" />
+                      <div className="space-y-2">
+                        <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="h-7 text-sm" placeholder="Nome" />
+                        <Input value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="h-7 text-sm" placeholder="Grupo (A, B...)" />
+                        <div className="flex items-center gap-2 mt-1">
+                          <Checkbox 
+                            id={`active-${p.id}`} 
+                            checked={newActive} 
+                            onCheckedChange={(checked) => setNewActive(checked === true)} 
+                          />
+                          <label htmlFor={`active-${p.id}`} className="text-xs font-medium cursor-pointer">
+                            Ativo no Bolão
+                          </label>
+                        </div>
+                      </div>
                     ) : (
-                      <p className="font-medium">{p.name}</p>
+                      <div className="flex flex-col">
+                        <p className={`font-medium ${!p.active ? "line-through text-muted-foreground" : ""}`}>{p.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">Grupo Copa: {p.cupGroup || "N/A"}</p>
+                          {!p.active && <span className="text-[10px] bg-muted px-1.5 rounded font-bold uppercase tracking-tight">Inativo</span>}
+                        </div>
+                      </div>
                     )}
-                    <p className="text-xs text-muted-foreground">Grupo Copa: {p.cupGroup || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -116,7 +153,13 @@ export default function AdminParticipantsPage() {
                     </>
                   ) : (
                     <>
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(p.id); setNewName(p.name); }}>
+                      <div className="flex items-center mr-2 pt-1" title={p.active ? "Desativar" : "Ativar"}>
+                        <Checkbox 
+                          checked={p.active} 
+                          onCheckedChange={() => handleToggleActive(p.id, p.active)}
+                        />
+                      </div>
+                      <Button size="icon" variant="ghost" onClick={() => { setEditing(p.id); setNewName(p.name); setNewGroup(p.cupGroup || ""); setNewActive(p.active); }}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
                       <Button size="icon" variant="ghost" onClick={() => handleDelete(p.id, p.name)}>

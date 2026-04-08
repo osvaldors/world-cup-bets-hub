@@ -173,6 +173,7 @@ export type Database = {
           cup_group: string | null
           id: string
           name: string
+          active: boolean
         }
         Insert: {
           avatar?: string
@@ -181,6 +182,7 @@ export type Database = {
           cup_group?: string | null
           id?: string
           name: string
+          active?: boolean
         }
         Update: {
           avatar?: string
@@ -189,6 +191,7 @@ export type Database = {
           cup_group?: string | null
           id?: string
           name?: string
+          active?: boolean
         }
         Relationships: []
       }
