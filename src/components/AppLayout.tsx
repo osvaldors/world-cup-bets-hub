@@ -15,9 +15,13 @@ import { User, Settings, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { profile, participant, signOut } = useAuth();
+  const { user, profile, participant, signOut } = useAuth();
   
-  const displayName = profile?.display_name || participant?.name || "Usuário";
+  const displayName = profile?.display_name || 
+                      participant?.name || 
+                      user?.user_metadata?.display_name || 
+                      user?.email?.split('@')[0] || 
+                      "Usuário";
   const avatarUrl = participant?.avatar || "";
 
   return (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMatches, useParticipants, useTeams, useInvalidate } from "@/hooks/use-bolao-data";
 import { fetchBets, upsertBet, fetchSpecialBetByParticipant, upsertSpecialBet, fetchSpecialResults } from "@/lib/supabase-queries";
+import { useAuth } from "@/hooks/useAuth";
 import { stageLabels } from "@/lib/supabase-queries";
 import { Bet, Match } from "@/types/bolao";
 import { calculateScore, SCORING_RULES } from "@/lib/scoring";
@@ -63,23 +64,23 @@ function groupMatchesByGroup(matchList: Match[]): Record<string, Match[]> {
 }
 
 export default function BetsPage() {
+  const { user, participantId } = useAuth();
   const { data: matches = [] } = useMatches();
   const { data: participants = [] } = useParticipants();
   const { data: teams = [] } = useTeams();
-  const [selectedParticipant, setSelectedParticipant] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("date");
   const invalidate = useInvalidate();
 
   const { data: bets = [], refetch: refetchBets } = useQuery({
-    queryKey: ["bets", selectedParticipant],
-    queryFn: () => (selectedParticipant ? fetchBets(selectedParticipant) : Promise.resolve([])),
-    enabled: !!selectedParticipant,
+    queryKey: ["bets", participantId],
+    queryFn: () => (participantId ? fetchBets(participantId) : Promise.resolve([])),
+    enabled: !!participantId,
   });
 
   const { data: specialBet, refetch: refetchSpecialBet } = useQuery({
-    queryKey: ["special-bet", selectedParticipant],
-    queryFn: () => (selectedParticipant ? fetchSpecialBetByParticipant(selectedParticipant) : Promise.resolve(null)),
-    enabled: !!selectedParticipant,
+    queryKey: ["special-bet", participantId],
+    queryFn: () => (participantId ? fetchSpecialBetByParticipant(participantId) : Promise.resolve(null)),
+    enabled: !!participantId,
   });
 
   const { data: specialResults } = useQuery({
@@ -95,11 +96,6 @@ export default function BetsPage() {
   const [championTeamId, setChampionTeamId] = useState<string>("");
   const [topScorerName, setTopScorerName] = useState<string>("");
 
-  // Set first participant when loaded
-  if (participants.length > 0 && !selectedParticipant) {
-    setSelectedParticipant(participants[0].id);
-  }
-
   // Sync special bet form when data loads
   useEffect(() => {
     if (specialBet) {
@@ -110,11 +106,6 @@ export default function BetsPage() {
       setTopScorerName("");
     }
   }, [specialBet]);
-
-  const handleParticipantChange = (participantId: string) => {
-    setSelectedParticipant(participantId);
-    setFormState({});
-  };
 
   // Update form state when bets load
   const initFormFromBets = () => {
@@ -148,7 +139,8 @@ export default function BetsPage() {
       return;
     }
     try {
-      await upsertBet(matchId, selectedParticipant, parseInt(form.homeScore), parseInt(form.awayScore));
+      if (!participantId) throw new Error("Aguardando dados do participante...");
+      await upsertBet(matchId, participantId, parseInt(form.homeScore), parseInt(form.awayScore));
       toast.success("Palpite salvo!");
       refetchBets();
       invalidate("participants-with-points");
@@ -158,7 +150,7 @@ export default function BetsPage() {
   };
 
   const handleSaveSpecialBet = async () => {
-    if (!selectedParticipant) return;
+    if (!participantId) return;
     if (groupStageFinished) {
       toast.error("Prazo encerrado! A fase eliminatória já começou.");
       return;
@@ -169,7 +161,7 @@ export default function BetsPage() {
     }
     try {
       await upsertSpecialBet(
-        selectedParticipant,
+        participantId,
         championTeamId || null,
         topScorerName || null
       );
@@ -205,7 +197,7 @@ export default function BetsPage() {
     }
   }
 
-  const currentParticipant = participants.find((p) => p.id === selectedParticipant);
+  const currentParticipant = participants.find((p) => p.id === participantId);
 
   const groupedUpcoming = viewMode === "date" ? groupMatchesByDate(upcomingMatches) : groupMatchesByGroup(upcomingMatches);
   const groupedPlayed = viewMode === "date" ? groupMatchesByDate(playedMatches) : groupMatchesByGroup(playedMatches);
@@ -264,13 +256,10 @@ export default function BetsPage() {
 
       <Card className="glass p-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <label className="text-sm font-medium text-muted-foreground shrink-0">Participante:</label>
-          <Select value={selectedParticipant} onValueChange={handleParticipantChange}>
-            <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Selecione" /></SelectTrigger>
-            <SelectContent>
-              {participants.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-muted-foreground shrink-0">Participante:</label>
+            <span className="text-sm font-bold text-primary">{currentParticipant?.name || "Carregando..."}</span>
+          </div>
           {currentParticipant && playedMatches.length > 0 && (
             <span className="text-sm text-success font-semibold flex items-center gap-1">
               <Trophy className="h-3.5 w-3.5" /> {totalPointsFromBets + specialPoints} pts
